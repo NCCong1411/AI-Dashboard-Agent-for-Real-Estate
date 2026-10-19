@@ -3,14 +3,17 @@
 from __future__ import annotations
 
 from datetime import date
-from typing import Annotated, Literal
+from typing import Annotated, Literal, Self
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, StrictInt, StrictStr, model_validator
 
 
-CATALOG_VERSION = "1.0.0-import-baseline"
+LEGACY_CATALOG_VERSION = "1.0.0-import-baseline"
+CATALOG_VERSION = "1.1.0-offers-repairs"
+CatalogVersion = Literal["1.0.0-import-baseline", "1.1.0-offers-repairs"]
+SUPPORTED_CATALOG_VERSIONS = (LEGACY_CATALOG_VERSION, CATALOG_VERSION)
 SCHEMA_VERSION = "1.0.0"
-KPIId = Literal["sales_value", "transaction_count", "average_sale_value", "sold_property_count"]
+KPIId = Literal["sales_value", "transaction_count", "average_sale_value", "sold_property_count", "offer_count", "accepted_offer_rate", "repair_cost"]
 DimensionId = Literal["day", "month", "quarter", "year", "state", "city", "property_type", "agent"]
 FilterField = Literal["state", "city", "property_type", "agent"]
 
@@ -32,10 +35,37 @@ class DateRange(StrictModel):
         return self
 
 
-class FilterSpec(StrictModel):
-    field: FilterField
+class StringFilterSpec(StrictModel):
+    field: Literal["state", "city", "property_type"]
     op: Literal["eq", "in"]
-    value: str | int | list[str] | list[int]
+    value: StrictStr | list[StrictStr]
+
+    @model_validator(mode="after")
+    def operator_matches_value(self) -> Self:
+        is_list = isinstance(self.value, list)
+        if (self.op == "in") != is_list:
+            raise ValueError("in requires a list; eq requires a scalar")
+        if is_list and not self.value:
+            raise ValueError("in filter list must not be empty")
+        return self
+
+
+class AgentFilterSpec(StrictModel):
+    field: Literal["agent"]
+    op: Literal["eq", "in"]
+    value: StrictInt | list[StrictInt]
+
+    @model_validator(mode="after")
+    def operator_matches_value(self) -> Self:
+        is_list = isinstance(self.value, list)
+        if (self.op == "in") != is_list:
+            raise ValueError("in requires a list; eq requires a scalar")
+        if is_list and not self.value:
+            raise ValueError("in filter list must not be empty")
+        return self
+
+
+FilterSpec = Annotated[StringFilterSpec | AgentFilterSpec, Field(discriminator="field")]
 
 
 class SortSpec(StrictModel):
@@ -45,7 +75,7 @@ class SortSpec(StrictModel):
 
 class AnalysisPlan(StrictModel):
     schema_version: Literal[SCHEMA_VERSION]
-    catalog_version: Literal[CATALOG_VERSION]
+    catalog_version: CatalogVersion
     kpis: Annotated[list[KPIId], Field(min_length=1, max_length=4)]
     dimensions: Annotated[list[DimensionId], Field(max_length=4)] = Field(default_factory=list)
     filters: Annotated[list[FilterSpec], Field(max_length=12)] = Field(default_factory=list)

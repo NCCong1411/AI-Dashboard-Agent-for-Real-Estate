@@ -17,7 +17,7 @@ export default function LoginPage() {
     const form = new FormData(event.currentTarget);
     try {
       await login(String(form.get("username") ?? ""), String(form.get("password") ?? ""));
-      router.replace("/");
+      router.replace("/dashboards");
       router.refresh();
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Không thể đăng nhập.");

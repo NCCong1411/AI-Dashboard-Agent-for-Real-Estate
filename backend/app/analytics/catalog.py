@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from app.schemas.analysis import AnalysisPlan, CATALOG_VERSION, DimensionId, KPIId
+from app.schemas.analysis import AnalysisPlan, SUPPORTED_CATALOG_VERSIONS, LEGACY_CATALOG_VERSION, DimensionId, KPIId
 
 
 @dataclass(frozen=True)
@@ -54,6 +54,22 @@ KPI_CATALOG: dict[KPIId, KPI] = {
         "property", "filtered_transaction_set", "transaction_date", "analytics.sales",
         "COUNT(DISTINCT property_id)", ("property_id",), SALES_DIMENSIONS,
     ),
+    "offer_count": KPI(
+        "offer_count", "Số đề nghị", "Số đề nghị theo ngày đề nghị", "offer",
+        "offer", "offer_date", "analytics.offers", "COUNT(offer_id)",
+        ("offer_id",), SALES_DIMENSIONS[:-1],
+    ),
+    "accepted_offer_rate": KPI(
+        "accepted_offer_rate", "Tỷ lệ đề nghị được chấp nhận", "Đề nghị accepted trên tất cả đề nghị", "ratio",
+        "offer", "offer_date", "analytics.offers",
+        "COUNT(offer_id) FILTER (WHERE status = 'accepted')::numeric / NULLIF(COUNT(offer_id), 0)",
+        ("offer_id", "status"), SALES_DIMENSIONS[:-1],
+    ),
+    "repair_cost": KPI(
+        "repair_cost", "Chi phí sửa chữa", "Tổng chi phí theo ngày sửa chữa", "dataset_currency",
+        "repair", "repair_date", "analytics.repairs", "SUM(cost)",
+        ("cost",), SALES_DIMENSIONS[:-1],
+    ),
 }
 
 DIMENSION_COLUMNS: dict[DimensionId, str] = {
@@ -70,8 +86,14 @@ FILTER_COLUMNS = {"state": "state", "city": "city", "property_type": "property_t
 
 
 def validate_plan_semantics(plan: AnalysisPlan) -> None:
-    if plan.catalog_version != CATALOG_VERSION:
+    if plan.catalog_version not in SUPPORTED_CATALOG_VERSIONS:
         raise ValueError("catalog version mismatch")
+    if plan.catalog_version == LEGACY_CATALOG_VERSION and set(plan.kpis) - {
+        "sales_value", "transaction_count", "average_sale_value", "sold_property_count",
+    }:
+        raise ValueError("legacy catalog supports sales KPIs only")
+    if len({KPI_CATALOG[kpi_id].view for kpi_id in plan.kpis}) != 1:
+        raise ValueError("each query must use exactly one fact; split mixed facts into separate queries")
     for kpi_id in plan.kpis:
         allowed = set(KPI_CATALOG[kpi_id].dimensions)
         unsupported = set(plan.dimensions) - allowed
@@ -80,6 +102,9 @@ def validate_plan_semantics(plan: AnalysisPlan) -> None:
     for filter_spec in plan.filters:
         if filter_spec.field not in FILTER_COLUMNS:
             raise ValueError(f"unsupported filter field: {filter_spec.field}")
-        is_list = isinstance(filter_spec.value, list)
-        if (filter_spec.op == "in") != is_list:
-            raise ValueError("in requires a list; eq requires a scalar")
+        if any(filter_spec.field not in KPI_CATALOG[kpi_id].dimensions for kpi_id in plan.kpis):
+            raise ValueError("filter is not supported by this fact")
+    selected_fields = set(plan.kpis) | set(plan.dimensions)
+    for sort_spec in plan.sort:
+        if sort_spec.field not in selected_fields:
+            raise ValueError("sort field must be selected as a KPI or dimension")

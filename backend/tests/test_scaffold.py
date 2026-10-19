@@ -29,7 +29,8 @@ def test_scaffold_needs_no_database_or_llm_secret(
     monkeypatch.setenv("APP_ENV", "test")
     settings = Settings(_env_file=None)
     assert settings.app_env == "test"
-    assert not any("key" in field or "secret" in field for field in Settings.model_fields)
+    assert settings.llm_mode == "mock"
+    assert settings.llm_api_key is None
 
 
 def test_health_endpoint_without_database_or_llm(

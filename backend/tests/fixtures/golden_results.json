@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0.0",
-  "catalog_version": "1.0.0-import-baseline",
+  "catalog_version": "1.1.0-offers-repairs",
   "evidence_status": "provisional_sql_import_baseline_live_database_unverified",
   "source": {
     "path": "data/real-estate-sales-sample-database-v3-sql-postgres.sql",

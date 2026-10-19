@@ -72,6 +72,125 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/dashboards": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Dashboards */
+        get: operations["list_dashboards_api_dashboards_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/dashboards/{dashboard_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Dashboard Detail */
+        get: operations["dashboard_detail_api_dashboards__dashboard_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/dashboards/{dashboard_id}/query": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Dashboard Query */
+        post: operations["dashboard_query_api_dashboards__dashboard_id__query_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/conversations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create Conversation */
+        post: operations["create_conversation_api_conversations_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/conversations/{conversation_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Conversation */
+        get: operations["get_conversation_api_conversations__conversation_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/conversations/{conversation_id}/messages": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Post Message */
+        post: operations["post_message_api_conversations__conversation_id__messages_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/conversations/{conversation_id}/approval": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Approve Draft */
+        post: operations["approve_draft_api_conversations__conversation_id__approval_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/health": {
         parameters: {
             query?: never;
@@ -96,13 +215,181 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** AgentError */
+        AgentError: {
+            /** Code */
+            code: string;
+            /** Message */
+            message: string;
+            /**
+             * Retryable
+             * @default false
+             */
+            retryable: boolean;
+        };
+        /** AgentFilterSpec */
+        AgentFilterSpec: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            field: "agent";
+            /**
+             * Op
+             * @enum {string}
+             */
+            op: "eq" | "in";
+            /** Value */
+            value: number | number[];
+        };
+        /** AgentResponse */
+        AgentResponse: {
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "needs_clarification" | "awaiting_approval" | "completed" | "failed";
+            /** Message */
+            message: string;
+            /** @default null */
+            draft: components["schemas"]["DashboardSpec"] | null;
+            /** @default null */
+            error: components["schemas"]["AgentError"] | null;
+            /**
+             * Outcome
+             * @default null
+             */
+            outcome: ("plan" | "clarification" | "unsupported" | "error") | null;
+            /**
+             * Reason Code
+             * @default null
+             */
+            reason_code: string | null;
+            /** Reason Codes */
+            reason_codes?: string[];
+            /**
+             * Conversation Id
+             * @default null
+             */
+            conversation_id: string | null;
+            /**
+             * Run Id
+             * @default null
+             */
+            run_id: string | null;
+            /**
+             * Draft Revision
+             * @default 0
+             */
+            draft_revision: number;
+            /**
+             * Draft Hash
+             * @default null
+             */
+            draft_hash: string | null;
+            /**
+             * Base Version Number
+             * @default null
+             */
+            base_version_number: number | null;
+            /**
+             * Scope
+             * @default null
+             */
+            scope: ("ALL" | "CA" | "TX") | null;
+            /**
+             * Mode
+             * @default mock
+             * @enum {string}
+             */
+            mode: "mock" | "live";
+            /** Results */
+            results?: {
+                [key: string]: components["schemas"]["QueryResult"];
+            };
+            /** Sql */
+            sql?: {
+                [key: string]: string;
+            };
+            /** @default null */
+            changes: components["schemas"]["DraftChanges"] | null;
+            /** Reused Query Ids */
+            reused_query_ids?: string[];
+        };
+        /** AnalysisPlan */
+        AnalysisPlan: {
+            /**
+             * Schema Version
+             * @constant
+             */
+            schema_version: "1.0.0";
+            /**
+             * Catalog Version
+             * @enum {string}
+             */
+            catalog_version: "1.0.0-import-baseline" | "1.1.0-offers-repairs";
+            /** Kpis */
+            kpis: ("sales_value" | "transaction_count" | "average_sale_value" | "sold_property_count" | "offer_count" | "accepted_offer_rate" | "repair_cost")[];
+            /** Dimensions */
+            dimensions?: ("day" | "month" | "quarter" | "year" | "state" | "city" | "property_type" | "agent")[];
+            /** Filters */
+            filters?: (components["schemas"]["StringFilterSpec"] | components["schemas"]["AgentFilterSpec"])[];
+            date_range?: components["schemas"]["DateRange"];
+            /** Sort */
+            sort?: components["schemas"]["SortSpec"][];
+            /**
+             * Limit
+             * @default null
+             */
+            limit: number | null;
+        };
+        /** ApprovalRequest */
+        ApprovalRequest: {
+            /**
+             * Decision
+             * @enum {string}
+             */
+            decision: "approve" | "reject";
+            /** Draft Revision */
+            draft_revision: number;
+            /** Draft Hash */
+            draft_hash: string;
+            /** Base Version Number */
+            base_version_number: number | null;
+        };
+        /** ApprovalResponse */
+        ApprovalResponse: {
+            /**
+             * Decision
+             * @enum {string}
+             */
+            decision: "approve" | "reject";
+            /**
+             * Conversation Id
+             * Format: uuid
+             */
+            conversation_id: string;
+            /** Draft Revision */
+            draft_revision: number;
+            /** Draft Hash */
+            draft_hash: string;
+            /** Dashboard Id */
+            dashboard_id: string | null;
+            /** Version Number */
+            version_number: number | null;
+            /**
+             * Checkpoint Synced
+             * @default false
+             */
+            checkpoint_synced: boolean;
+        };
         /** CatalogKPI */
         CatalogKPI: {
             /**
              * Id
              * @enum {string}
              */
-            id: "sales_value" | "transaction_count" | "average_sale_value" | "sold_property_count";
+            id: "sales_value" | "transaction_count" | "average_sale_value" | "sold_property_count" | "offer_count" | "accepted_offer_rate" | "repair_cost";
             /** Label Vi */
             label_vi: string;
             /** Description Vi */
@@ -137,101 +424,109 @@ export interface components {
                 [key: string]: string;
             } | null;
         };
-        /** HTTPValidationError */
-        HTTPValidationError: {
-            /** Detail */
-            detail?: components["schemas"]["ValidationError"][];
-        };
-        /** LoginRequest */
-        LoginRequest: {
-            /** Username */
-            username: string;
-            /** Password */
-            password: string;
-        };
-        /** UserResponse */
-        UserResponse: {
-            /** Username */
-            username: string;
-            /** Role */
-            role: string;
-            /** Scope Profile */
-            scope_profile: string;
-        };
-        /** ValidationError */
-        ValidationError: {
-            /** Location */
-            loc: (string | number)[];
-            /** Message */
-            msg: string;
-            /** Error Type */
-            type: string;
-            /** Input */
-            input?: unknown;
-            /** Context */
-            ctx?: Record<string, never>;
-        };
-        /** AgentError */
-        AgentError: {
-            /** Code */
-            code: string;
-            /** Message */
-            message: string;
+        /** ConversationMessageView */
+        ConversationMessageView: {
             /**
-             * Retryable
-             * @default false
+             * Role
+             * @enum {string}
              */
-            retryable: boolean;
+            role: "user" | "assistant" | "system";
+            /** Content */
+            content: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
         };
-        /** AgentResponse */
-        AgentResponse: {
+        /** ConversationView */
+        ConversationView: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Dashboard Id */
+            dashboard_id: string | null;
             /**
              * Status
              * @enum {string}
              */
-            status: "needs_clarification" | "awaiting_approval" | "completed" | "failed";
-            /** Message */
-            message: string;
-            /** @default null */
+            status: "running" | "needs_clarification" | "awaiting_approval" | "completed" | "failed";
+            /** Draft Revision */
+            draft_revision: number;
+            /** Draft Hash */
+            draft_hash: string | null;
+            /** Base Version Number */
+            base_version_number: number | null;
             draft: components["schemas"]["DashboardSpec"] | null;
-            /** @default null */
-            error: components["schemas"]["AgentError"] | null;
+            /** Messages */
+            messages: components["schemas"]["ConversationMessageView"][];
+            response: components["schemas"]["AgentResponse"] | null;
+            preview?: components["schemas"]["AgentResponse"] | null;
+            approval?: components["schemas"]["ApprovalResponse"] | null;
+            /**
+             * Mode
+             * @enum {string}
+             */
+            mode: "mock" | "live";
         };
-        /** AnalysisPlan */
-        AnalysisPlan: {
+        /** CreateConversationRequest */
+        CreateConversationRequest: {
+            /** Dashboard Id */
+            dashboard_id?: string | null;
+        };
+        /** DashboardDetail */
+        DashboardDetail: {
             /**
-             * Schema Version
-             * @constant
+             * Id
+             * Format: uuid
              */
-            schema_version: "1.0.0";
+            id: string;
+            /** Title */
+            title: string;
+            /** Version Number */
+            version_number: number;
             /**
-             * Catalog Version
-             * @constant
+             * Approved At
+             * Format: date-time
              */
-            catalog_version: "1.0.0-import-baseline";
-            /** Kpis */
-            kpis: ("sales_value" | "transaction_count" | "average_sale_value" | "sold_property_count")[];
+            approved_at: string;
+            spec: components["schemas"]["DashboardSpec"];
+            /** Sql */
+            sql?: {
+                [key: string]: string;
+            } | null;
             /**
-             * Dimensions
-             * @default []
+             * Can Edit
+             * @default false
              */
-            dimensions: ("day" | "month" | "quarter" | "year" | "state" | "city" | "property_type" | "agent")[];
+            can_edit: boolean;
+        };
+        /** DashboardQueryRequest */
+        DashboardQueryRequest: {
+            /** Filters */
+            filters?: (components["schemas"]["StringFilterSpec"] | components["schemas"]["AgentFilterSpec"])[];
+            date_range?: components["schemas"]["DateRange"] | null;
+        };
+        /** DashboardQueryResponse */
+        DashboardQueryResponse: {
             /**
-             * Filters
-             * @default []
+             * Dashboard Id
+             * Format: uuid
              */
-            filters: components["schemas"]["FilterSpec"][];
-            date_range?: components["schemas"]["DateRange"];
+            dashboard_id: string;
+            /** Version Number */
+            version_number: number;
             /**
-             * Sort
-             * @default []
+             * Scope
+             * @enum {string}
              */
-            sort: components["schemas"]["SortSpec"][];
-            /**
-             * Limit
-             * @default null
-             */
-            limit: number | null;
+            scope: "ALL" | "CA" | "TX";
+            /** Results */
+            results: {
+                [key: string]: components["schemas"]["QueryResult"];
+            };
         };
         /** DashboardSpec */
         DashboardSpec: {
@@ -242,15 +537,34 @@ export interface components {
             schema_version: "1.0.0";
             /**
              * Catalog Version
-             * @constant
+             * @enum {string}
              */
-            catalog_version: "1.0.0-import-baseline";
+            catalog_version: "1.0.0-import-baseline" | "1.1.0-offers-repairs";
             /** Title */
             title: string;
             /** Queries */
             queries: components["schemas"]["QuerySpec"][];
             /** Widgets */
             widgets: components["schemas"]["WidgetSpec"][];
+            /** Layout */
+            layout: components["schemas"]["LayoutItem"][];
+        };
+        /** DashboardSummary */
+        DashboardSummary: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Title */
+            title: string;
+            /** Version Number */
+            version_number: number;
+            /**
+             * Approved At
+             * Format: date-time
+             */
+            approved_at: string;
         };
         /** DateRange */
         DateRange: {
@@ -265,20 +579,54 @@ export interface components {
              */
             end_exclusive: string | null;
         };
-        /** FilterSpec */
-        FilterSpec: {
+        /** DraftChanges */
+        DraftChanges: {
+            /** Widgets */
+            widgets?: components["schemas"]["WidgetChange"][];
+            /** Changed Queries */
+            changed_queries?: string[];
             /**
-             * Field
-             * @enum {string}
+             * Title Changed
+             * @default false
              */
-            field: "state" | "city" | "property_type" | "agent";
+            title_changed: boolean;
             /**
-             * Op
-             * @enum {string}
+             * Presentation Only
+             * @default false
              */
-            op: "eq" | "in";
-            /** Value */
-            value: string | number | string[] | number[];
+            presentation_only: boolean;
+        };
+        /** HTTPValidationError */
+        HTTPValidationError: {
+            /** Detail */
+            detail?: components["schemas"]["ValidationError"][];
+        };
+        /** LayoutItem */
+        LayoutItem: {
+            /** Widget Id */
+            widget_id: string;
+            /** X */
+            x: number;
+            /** Y */
+            y: number;
+            /** Width */
+            width: number;
+            /** Height */
+            height: number;
+        };
+        /** LoginRequest */
+        LoginRequest: {
+            /** Username */
+            username: string;
+            /** Password */
+            password: string;
+        };
+        /** MessageRequest */
+        MessageRequest: {
+            /** Message */
+            message: string;
+            /** Expected Revision */
+            expected_revision?: number | null;
         };
         /** QueryResult */
         QueryResult: {
@@ -295,11 +643,13 @@ export interface components {
              * @enum {string}
              */
             status: "ok" | "no_data" | "error";
+            /** Warnings */
+            warnings?: string[];
             /**
-             * Warnings
-             * @default []
+             * Error Code
+             * @default null
              */
-            warnings: string[];
+            error_code: ("timeout" | "row_limit" | "cost_limit" | "database_error" | "configuration_error") | null;
         };
         /** QuerySpec */
         QuerySpec: {
@@ -325,13 +675,62 @@ export interface components {
         /** SortSpec */
         SortSpec: {
             /** Field */
-            field: ("sales_value" | "transaction_count" | "average_sale_value" | "sold_property_count") | ("day" | "month" | "quarter" | "year" | "state" | "city" | "property_type" | "agent");
+            field: ("sales_value" | "transaction_count" | "average_sale_value" | "sold_property_count" | "offer_count" | "accepted_offer_rate" | "repair_cost") | ("day" | "month" | "quarter" | "year" | "state" | "city" | "property_type" | "agent");
             /**
              * Direction
              * @default asc
              * @enum {string}
              */
             direction: "asc" | "desc";
+        };
+        /** StringFilterSpec */
+        StringFilterSpec: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            field: "city" | "property_type" | "state";
+            /**
+             * Op
+             * @enum {string}
+             */
+            op: "eq" | "in";
+            /** Value */
+            value: string | string[];
+        };
+        /** UserResponse */
+        UserResponse: {
+            /** Username */
+            username: string;
+            /** Role */
+            role: string;
+            /** Scope Profile */
+            scope_profile: string;
+        };
+        /** ValidationError */
+        ValidationError: {
+            /** Location */
+            loc: (string | number)[];
+            /** Message */
+            msg: string;
+            /** Error Type */
+            type: string;
+            /** Input */
+            input?: unknown;
+            /** Context */
+            ctx?: Record<string, never>;
+        };
+        /** WidgetChange */
+        WidgetChange: {
+            /** Widget Id */
+            widget_id: string;
+            /** Title */
+            title: string;
+            /**
+             * Change
+             * @enum {string}
+             */
+            change: "added" | "removed" | "updated";
         };
         /** WidgetSpec */
         WidgetSpec: {
@@ -350,12 +749,155 @@ export interface components {
              * Kpi
              * @enum {string}
              */
-            kpi: "sales_value" | "transaction_count" | "average_sale_value" | "sold_property_count";
+            kpi: "sales_value" | "transaction_count" | "average_sale_value" | "sold_property_count" | "offer_count" | "accepted_offer_rate" | "repair_cost";
             /**
              * Dimension
              * @default null
              */
-            dimension: string | null;
+            dimension: ("day" | "month" | "quarter" | "year" | "state" | "city" | "property_type" | "agent") | null;
+        };
+        /** AddWidget */
+        AddWidget: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            op: "add_widget";
+            /**
+             * Kpi
+             * @enum {string}
+             */
+            kpi: "sales_value" | "transaction_count" | "average_sale_value" | "sold_property_count" | "offer_count" | "accepted_offer_rate" | "repair_cost";
+            /**
+             * Chart
+             * @default card
+             * @enum {string}
+             */
+            chart: "card" | "line" | "bar" | "horizontal_bar" | "pie" | "donut" | "table";
+            /**
+             * Dimension
+             * @default null
+             */
+            dimension: ("day" | "month" | "quarter" | "year" | "state" | "city" | "property_type" | "agent") | null;
+        };
+        /** ClearFilters */
+        ClearFilters: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            op: "clear_filters";
+        };
+        /**
+         * PlannerDecision
+         * @description One provider decision, with semantic exclusivity beyond JSON schema.
+         */
+        PlannerDecision: {
+            /**
+             * Outcome
+             * @enum {string}
+             */
+            outcome: "plan" | "clarification" | "unsupported";
+            /** Message */
+            message: string;
+            /** @default null */
+            dashboard: components["schemas"]["DashboardSpec"] | null;
+            /**
+             * Patch
+             * @default null
+             */
+            patch: (components["schemas"]["SetFilter"] | components["schemas"]["RemoveFilter"] | components["schemas"]["ClearFilters"] | components["schemas"]["SetDates"] | components["schemas"]["SetChart"] | components["schemas"]["AddWidget"] | components["schemas"]["RemoveWidget"] | components["schemas"]["RenameWidget"] | components["schemas"]["RenameDashboard"])[] | null;
+            /**
+             * Reason Code
+             * @default null
+             */
+            reason_code: string | null;
+            /** Reason Codes */
+            reason_codes?: string[];
+        };
+        /** RemoveFilter */
+        RemoveFilter: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            op: "remove_filter";
+            /**
+             * Field
+             * @enum {string}
+             */
+            field: "state" | "city" | "property_type" | "agent";
+        };
+        /** RemoveWidget */
+        RemoveWidget: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            op: "remove_widget";
+            /** Widget Id */
+            widget_id: string;
+        };
+        /** RenameDashboard */
+        RenameDashboard: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            op: "rename_dashboard";
+            /** Title */
+            title: string;
+        };
+        /** RenameWidget */
+        RenameWidget: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            op: "rename_widget";
+            /** Widget Id */
+            widget_id: string;
+            /** Title */
+            title: string;
+        };
+        /** SetChart */
+        SetChart: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            op: "set_chart";
+            /** Widget Id */
+            widget_id: string;
+            /**
+             * Chart
+             * @enum {string}
+             */
+            chart: "card" | "line" | "bar" | "horizontal_bar" | "pie" | "donut" | "table";
+            /**
+             * Dimension
+             * @default null
+             */
+            dimension: ("day" | "month" | "quarter" | "year" | "state" | "city" | "property_type" | "agent") | null;
+        };
+        /** SetDates */
+        SetDates: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            op: "set_dates";
+            date_range: components["schemas"]["DateRange"];
+        };
+        /** SetFilter */
+        SetFilter: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            op: "set_filter";
+            /** Filter */
+            filter: components["schemas"]["StringFilterSpec"] | components["schemas"]["AgentFilterSpec"];
         };
     };
     responses: never;
@@ -453,6 +995,226 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CatalogResponse"];
+                };
+            };
+        };
+    };
+    list_dashboards_api_dashboards_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DashboardSummary"][];
+                };
+            };
+        };
+    };
+    dashboard_detail_api_dashboards__dashboard_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                dashboard_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DashboardDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    dashboard_query_api_dashboards__dashboard_id__query_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                dashboard_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DashboardQueryRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DashboardQueryResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_conversation_api_conversations_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateConversationRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConversationView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_conversation_api_conversations__conversation_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                conversation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConversationView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_message_api_conversations__conversation_id__messages_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                conversation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MessageRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgentResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    approve_draft_api_conversations__conversation_id__approval_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                conversation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ApprovalRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApprovalResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

@@ -65,7 +65,10 @@ CurrentUser = Annotated[User, Depends(current_user)]
 
 def require_builder(user: CurrentUser) -> User:
     if user.role != "builder":
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Builder role required")
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail={
+            "code": "authorization_denied_viewer",
+            "message": "Viewer không được tạo hoặc chỉnh sửa dashboard bằng Agent.",
+        })
     return user
 
 

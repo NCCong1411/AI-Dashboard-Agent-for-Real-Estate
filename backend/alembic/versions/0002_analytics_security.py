@@ -118,7 +118,7 @@ def upgrade() -> None:
             JOIN pg_class c ON c.oid = a.attrelid
             JOIN pg_namespace n ON n.oid = c.relnamespace
             CROSS JOIN LATERAL aclexplode(
-              COALESCE(a.attacl, '{{}}'::aclitem[])
+              CASE WHEN cardinality(a.attacl) > 0 THEN a.attacl END
             ) acl
             WHERE n.nspname = 'public'
               AND c.relname IN ({source_names})
@@ -145,7 +145,7 @@ def upgrade() -> None:
             JOIN pg_class c ON c.oid = a.attrelid
             JOIN pg_namespace n ON n.oid = c.relnamespace
             CROSS JOIN LATERAL aclexplode(
-              COALESCE(a.attacl, '{{}}'::aclitem[])
+              CASE WHEN cardinality(a.attacl) > 0 THEN a.attacl END
             ) acl
             WHERE n.nspname = 'public'
               AND c.relname IN ({scoped_names})

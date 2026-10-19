@@ -1,10 +1,12 @@
 # KPI catalog — MVP bất động sản
 
 Catalog ID: `real-estate-mvp`  
-Catalog version: `1.0.0-import-baseline`  
+Runtime catalog version: `1.1.0-offers-repairs`
 Evidence: file import SHA-256 `c585831fc15942bfa3f3fa793d4d4ebedfde81905ae1214781431001043abbe3`
 
-Đây là bản dự thảo catalog nghiệp vụ đã kiểm chứng trên file import cho P0-T02. Baseline DB thật vẫn **chưa được xác minh** vì thiếu credential chỉ đọc; khi DB khác file, phải ghi version/baseline mới, không âm thầm thay nghĩa KPI.
+Đây là catalog nghiệp vụ đã kiểm chứng trên file import; audit chỉ đọc DB `real_estate_db` ngày 17/10/2026 xác nhận đủ 16 bảng, row counts và baseline ALL/CA/TX khớp, không có chênh lệch schema/khóa. Golden SQL độc lập đã đạt 15/15 trường hợp trên DB chính bằng giao dịch chỉ đọc; không âm thầm thay nghĩa KPI.
+
+Runtime 1.1.0 bật đủ bảy KPI dưới đây. Phiên bản `1.0.0-import-baseline` vẫn đọc/chạy được với đúng bốn KPI sales ban đầu; không cho dùng KPI mới dưới version cũ. Đọc, lọc hoặc đổi tên dashboard cũ không tự đổi catalog. Khi người dùng yêu cầu thêm KPI offers/repairs, backend nâng **draft** lên 1.1.0 và cập nhật version của từng query; bản đã duyệt cũ giữ nguyên đến khi duyệt draft mới. Bốn công thức sales, ngày và grain không đổi.
 
 ## Quy tắc chung
 
@@ -26,10 +28,12 @@ Evidence: file import SHA-256 `c585831fc15942bfa3f3fa793d4d4ebedfde81905ae121478
 | `average_sale_value` | Giá trị giao dịch trung bình | `transactions`, một giao dịch | `transaction_date` | `SUM(sale_price) / NULLIF(COUNT(transaction_id), 0)` | Đơn vị tiền dataset / giao dịch | thời gian, bang, thành phố, loại BĐS, môi giới | 2 |
 | `sold_property_count` | Số BĐS có giao dịch | tập BĐS trong các giao dịch đã lọc | `transaction_date` | `COUNT(DISTINCT transactions.property_id)` | bất động sản | thời gian, bang, thành phố, loại BĐS, môi giới | 2 |
 | `offer_count` | Số đề nghị | `offers`, một đề nghị | `offer_date` | `COUNT(offers.offer_id)` | đề nghị | thời gian, bang, thành phố, loại BĐS | 4 |
-| `accepted_offer_rate` | Tỷ lệ đề nghị được chấp nhận | `offers`, một đề nghị | `offer_date` | `COUNT(offer_id) FILTER (WHERE status='accepted') / NULLIF(COUNT(offer_id), 0)` | tỷ lệ 0–1 | thời gian, bang, thành phố, loại BĐS | 4 |
+| `accepted_offer_rate` | Tỷ lệ đề nghị được chấp nhận | `offers`, một đề nghị | `offer_date` | `COUNT(offer_id) FILTER (WHERE status='accepted')::numeric / NULLIF(COUNT(offer_id), 0)` | tỷ lệ 0–1 | thời gian, bang, thành phố, loại BĐS | 4 |
 | `repair_cost` | Chi phí sửa chữa | `repairs`, một lần sửa chữa | `repair_date` | `SUM(repairs.cost)` | Đơn vị tiền dataset | thời gian, bang, thành phố, loại BĐS | 4 |
 
 “Thời gian” hỗ trợ grain ngày, tháng, quý và năm trên đúng trường ngày của fact. `sold_property_count` áp `DISTINCT` sau toàn bộ filter; nó không đồng nghĩa `transaction_count` khi một BĐS có nhiều giao dịch.
+
+Offers/repairs không có quan hệ môi giới trực tiếp nên cả dimension và filter `agent` đều bị từ chối. Mỗi query chỉ một fact; dashboard nhiều fact chia query riêng để tránh nhân số dòng. Executor thêm count khóa fact ẩn để phân biệt tập rỗng với giá trị 0 hoặc cost null, không trả cột ẩn qua API. Tỷ lệ giữ Decimal string 0–1 trong API; card/bảng dịch dấu thập phân bằng chuỗi rồi format thành phần trăm (2/9 → 22,22%), không tính lại bằng float.
 
 ## Hợp đồng từng KPI
 

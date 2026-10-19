@@ -1,6 +1,10 @@
 # AI Dashboard Agent — local MVP
 
-Ứng dụng local gồm Next.js App Router ở cổng 3000 và FastAPI ở cổng 8000. Hiện đã có scaffold, health check và migration metadata dự thảo; health không kết nối database, còn authentication, dashboard API và LLM chưa được triển khai.
+Ứng dụng local gồm Next.js App Router ở cổng 3000 và FastAPI ở cổng 8000. Đã có auth, bảy KPI sales/offers/repairs, compiler SQL allowlist, executor read-only theo scope, dashboard với bộ lọc/ECharts và Builder tạo/chỉnh draft qua hội thoại. Có durable checkpoint, khôi phục sau restart, API/UI duyệt hoặc từ chối và phát hành phiên bản idempotent. Đã kiểm chứng DB chính, bộ test PostgreSQL/browser, benchmark LLM thật và gate chất lượng theo review ngữ nghĩa được duyệt; xem trạng thái bàn giao mới nhất trong [kế hoạch](IMPLEMENTATION_PLAN.md) và [báo cáo nghiệm thu](docs/acceptance-report.md). Health không cần database.
+
+![Dashboard bất động sản với ba KPI và biểu đồ theo tháng, bang, loại bất động sản](docs/images/dashboard-preview.png)
+
+*Giao diện chạy thật với dữ liệu mẫu tổng hợp, bộ lọc năm 2025. Dự án hiện là MVP local, chưa triển khai web public.*
 
 ## Yêu cầu
 
@@ -8,13 +12,14 @@
 - Python 3.11 (project chấp nhận `>=3.11,<3.13`).
 - Node.js `>=20.9.0`; đã kiểm tra với Node 22.
 - PostgreSQL chưa cần để chạy health check P1-T01.
-- Không cần LLM API key.
+- Chế độ mock không cần LLM API key; chế độ live cần key, model và giá đã xác minh.
 
 ## Thiết lập lần đầu
 
 Chạy từ thư mục repository:
 
 ```powershell
+py -3.11 -m venv .venv
 Copy-Item backend/.env.example backend/.env
 Copy-Item frontend/.env.example frontend/.env.local
 
@@ -27,11 +32,28 @@ Pop-Location
 
 Không commit `backend/.env`, `frontend/.env.local`, `.venv`, backup hoặc log. Các dependency Python và npm đã được pin trong lockfile; dùng `npm ci`, không dùng install không khóa phiên bản trong quy trình tái lập.
 
+Chỉ copy file env khi thiết lập mới; nếu đã có cấu hình, giữ file hiện tại và đối chiếu những biến mới trong `.env.example`. PostgreSQL và các tài khoản runtime/reader là bắt buộc cho đăng nhập/dashboard; chỉ health check chạy độc lập DB. Xem [local runbook](docs/local-runbook.md) trước migration hoặc restore.
+
+Để kiểm chứng lại setup trong snapshot và virtualenv mới, dùng Git CLI và chạy:
+
+```powershell
+.\.venv\Scripts\python.exe backend/scripts/verify_clean_setup.py --e2e
+```
+
+Script lấy source hiện tại kể cả thay đổi chưa commit, bỏ env thật/dependency/runtime cũ, cài từ hai lockfile, sinh API types, chạy unit/lint/build/typecheck rồi PostgreSQL test và Playwright. Snapshot/log/report được giữ trong `backend/.runtime/clean-setup-*`. Thư mục đang làm việc và DB đang có được giữ nguyên. Registry/proxy từ biến môi trường được giữ; cấu hình pip đích cài đặt bị loại và pip.ini bị tắt để chỉ cài vào virtualenv mới. Wheel/npm/browser cache của máy có thể được dùng lại; đây là kiểm chứng dependency mới trên cùng máy, không phải máy/OS mới. Không có `--e2e` thì chỉ chạy tới build/typecheck.
+
 ## Chạy local
 
 ```powershell
 .\scripts\start-local.ps1
 ```
+
+Nếu đã dùng quy trình cấp bốn login local trong [runbook](docs/local-runbook.md),
+dùng `.\scripts\start-local.ps1 -UseProvisionedRoles` để nạp URL từ artifact
+bảo vệ mà không đưa secret vào lệnh. Sau khi seed demo, bốn username là
+`builder_all`, `viewer_all`, `viewer_ca`, `builder_tx`; mật khẩu chỉ nằm trong
+`backend/.runtime/local-demo-accounts.env` bị Git ignore. Không gửi file này
+hoặc mật khẩu vào chat/GitHub.
 
 Script kiểm tra config/dependency, chạy FastAPI ẩn ở `127.0.0.1:8000`, chờ health thành công rồi chạy Next.js ở `127.0.0.1:3000`. Nhấn `Ctrl+C` để dừng frontend; script sẽ dừng backend do chính nó tạo.
 
@@ -89,7 +111,70 @@ Kiểm tra lỗi config rõ ràng:
 - KPI/golden fixtures: `docs/kpi-catalog.md`, `backend/tests/fixtures/`.
 - Bộ 30 câu đánh giá và report template: `backend/tests/evaluation/prompts.json`, `docs/acceptance-report.md`.
 
-Live database audit vẫn bị chặn cho tới khi có credential chỉ đọc. Không coi baseline file import là bằng chứng DB thật.
+DB chính đã được audit và đối chiếu 16 bảng/2.203 dòng; xem bằng chứng trong `docs/data-audit.md`. Khi dùng database khác, chạy lại audit bằng credential phù hợp trước khi áp dụng baseline này.
+
+## Kiểm thử PostgreSQL riêng, không cần cấu hình credential thủ công
+
+Nếu đã cài PostgreSQL 16 trên Windows, chạy từ repository:
+
+```powershell
+.\.venv\Scripts\python.exe backend/scripts/test_local_postgres.py
+```
+
+Script tạo cluster mới trong `backend/.runtime/`, chỉ nghe loopback ở cổng trống, tự sinh password và tách role migration/runtime/ALL/CA/TX. Script import dataset mẫu vào database nguồn riêng, tạo custom-format backup, restore database test, rồi chạy migration upgrade/downgrade/upgrade và kiểm thử auth/RLS/executor/dashboard API. PostgreSQL test được dừng trong `finally`; dữ liệu/log/backup được giữ trong thư mục ignored để kiểm tra. Script không dùng credential hoặc database của service PostgreSQL đang có. Có thể chỉ định vị trí binary bằng `--postgres-bin`.
+
+Bộ test còn kiểm tra graph checkpoint/interrupt bằng cách dừng và khởi động uvicorn thật, khôi phục draft cùng thread và kiểm tra resume không lặp LLM/query. Runtime MVP chạy **một backend process**: cơ chế nhận diện run bị ngắt dùng process epoch, chưa hỗ trợ nhiều worker backend đồng thời. Run timeout mặc định 120 giây; trong cùng process, recovery chỉ nhận run hết timeout cộng 30 giây. Sau restart, run trước preview được báo `run_interrupted`; preview đã checkpoint được khôi phục tại bước chờ duyệt. Không tự chạy lại plan/query bị ngắt.
+
+Để kiểm tra cả trình duyệt:
+
+```powershell
+Push-Location frontend
+npx playwright install chromium
+Pop-Location
+.\.venv\Scripts\python.exe backend/scripts/test_local_postgres.py --e2e
+```
+
+Chế độ này tự seed tài khoản và dashboard demo, chạy frontend/backend ở cổng trống, chạy Playwright rồi dừng các process do nó tạo. Không cần gửi hoặc lưu password demo vào source. Đây là bằng chứng trên DB test từ import, chưa thay thế audit `real_estate_db` đang dùng.
+
+Full browser suite cần chạy qua runner trên: các test recovery dùng control file trong thư mục artifact ignored để runner restart **process backend do chính nó tạo**, không có endpoint restart trong ứng dụng. Reader outage đổi cổng reader CA sang cổng loopback không có server; provider outage dùng factory test-only và `LLM_MODE=mock`, không gọi nhà cung cấp thật. Factory từ chối môi trường ngoài test/mock. Runner kiểm row count/content fingerprint của cả 16 bảng source trước/sau và ghi `source-integrity.json`; ledger `public.alembic_version` là metadata, không tính vào source.
+
+`DATABASE_CONNECT_TIMEOUT_SECONDS` mặc định 3 giây, nhận 2–5 giây; áp dụng cho kết nối DB và chờ checkout pool runtime/reader. Query analytics và kiểm principal reader có statement timeout tối đa 5 giây. Connect failure trả lỗi dữ liệu đã làm sạch; không chờ vô hạn trước khi thiết lập statement timeout.
+
+## Dashboard đã duyệt và demo không cần LLM
+
+Trong `/builder`, tạo hoặc chỉnh bản nháp rồi chọn **Duyệt và phát hành** hoặc **Từ chối bản nháp**. Chỉ Builder sở hữu được quyết định. Người xem tiếp tục đọc bản cũ đến khi phiên bản mới commit; dữ liệu được tính lại theo scope người xem. Từ chối không tạo phiên bản. Sau quyết định, có thể tiếp tục hội thoại để tạo bản nháp tiếp theo.
+
+API `POST /api/conversations/{id}/approval` nhận `decision` (`approve`/`reject`), `draft_revision`, `draft_hash` và `base_version_number` (bắt buộc, `null` cho dashboard mới). Giá trị phải lấy nguyên từ preview hiện tại. Revision/hash/base cũ trả 409. Nếu dashboard có phiên bản mới từ một hội thoại khác, mở bản đã duyệt để bắt đầu hội thoại mới. Retry đúng quyết định trả cùng dashboard/version. Khi `checkpoint_synced=false`, quyết định/phát hành đã commit; chọn **Hoàn tất xử lý** để resume graph trước khi chỉnh tiếp. Không tạo phiên bản mới khi retry.
+
+Sau khi cấu hình/migrate DB local theo runbook và seed người dùng, tạo dashboard demo bằng CLI:
+
+```powershell
+.\.venv\Scripts\python.exe backend/scripts/seed_dashboard.py --owner builder_all --confirm-demo
+```
+
+CLI tạo một bản đã duyệt với ba card và ba chart; chạy lại giữ nguyên phiên bản đã có. CLI này chỉ phục vụ demo trước luồng HITL, không có endpoint bỏ qua duyệt trong runtime. Mở `/dashboards`; mỗi lần lọc/tải lại, API chạy theo scope của người đang xem. Viewer không nhận SQL chi tiết và không thể sửa spec qua API. Ngày/bang/loại bổ sung được giao với bộ lọc đã lưu, không nới rộng chúng.
+
+Executor mặc định `statement_timeout=5000ms`, tối đa 1.000 dòng và planner cost `10000`; timeout/row limit có hard upper bounds trong Settings. Cost là đơn vị của PostgreSQL planner, không phải tiền hoặc thời gian. Bảng tiền trả qua API dưới dạng chuỗi Decimal; lỗi query trả mã riêng và không trả một phần kết quả khi vượt dòng.
+
+## Adapter, ngân sách và hội thoại
+
+`LLM_MODE=mock` không cần key và dùng tập quy tắc deterministic phục vụ phát triển. `LLM_MODE=live` yêu cầu toàn bộ cấu hình provider/HTTPS endpoint/model/key/pricing trong `.env.example`; chưa có model hoặc giá mặc định. Không coi mock là bằng chứng chất lượng LLM thật.
+
+Adapter OpenAI dùng Responses structured output, không tự retry, không gửi raw dataset/query results. `UsageService` giữ chỗ chi phí/token trong `app.usage_calls` trước mỗi call, dùng khóa Builder cho hạn mức ngày và đối soát idempotent sau call. Timeout/usage thiếu giữ nguyên phần dự trù. Mặc định 3 calls, 24.000 token, 60 giây/run, 0,10 USD/run và 1 USD/ngày theo giờ Việt Nam. Giá phải bao phủ rate cao nhất áp dụng (cache-write/tier/region nếu có), là ước tính chứ không phải hóa đơn.
+
+Builder mở `/builder` từ danh sách dashboard; Viewer không được gọi API hội thoại. Ba endpoint hiện có: `POST /api/conversations`, `GET /api/conversations/{id}`, `POST /api/conversations/{id}/messages`. Thread/run ID do server tạo; request thứ hai khi đang running nhận 409. Lịch sử prompt được giới hạn; query được validate toàn bộ trước khi chạy. Chỉnh draft dùng bounded operations thay vì thay toàn bộ spec, giữ widget không liên quan. Chỉ dùng lại kết quả trong cùng hội thoại khi plan/catalog/scope khớp; đổi scope vô hiệu toàn bộ dữ liệu cũ. Khi hỏi lại, preview hợp lệ trước đó vẫn được giữ nếu scope còn khớp.
+
+Chuỗi thử mock: tạo “Tổng quan giao dịch năm 2025” → “Lọc California” → “Đổi biểu đồ theo loại bất động sản thành cột ngang” → “Thêm số bất động sản có giao dịch” → “Bỏ biểu đồ theo bang” → “Đổi khoảng thời gian năm 2024”. Kiểm tra preview và diff, rồi bấm **Duyệt và phát hành** để Viewer xem phiên bản chính thức; **Từ chối** giữ nguyên phiên bản đã duyệt trước đó. Live adapter đã có bằng chứng browser/benchmark và đánh giá 30 câu: raw 21/30, valid 19/20, 10/10 câu hỏi lại/từ chối đạt theo review ngữ nghĩa được duyệt. Strict exact-match gate vẫn false; chi tiết tại `docs/live-eval-review.md`.
+
+Để chạy evaluator qua auth/API/graph và SQL tham chiếu độc lập trong DB test:
+
+```powershell
+.\.venv\Scripts\python.exe backend/scripts/test_local_postgres.py --e2e --evaluate
+```
+
+Report `mock-full-evaluation.json` nằm trong thư mục artifact của cluster test, báo đúng PASS/FAIL/BLOCKED và không coi mock là release gate. Corpus đầy đủ có 20 valid, 5 ambiguous và 5 unsupported; đã bật cả case offers/repairs. Mỗi query/metric thực thi, kể cả query không gắn widget, được so với SQL trực tiếp trên fact độc lập compiler; tính đúng số liệu và tính đúng câu hỏi được báo riêng. Text câu hỏi/giải thích được so bảo thủ với oracle; paraphrase có thể cần review. Lần mock 16/10/2026: 8 PASS, 22 FAIL, 0 BLOCKED; 22 query đã chạy đối soát số liệu đều đúng, release gate vẫn false. Chạy evaluator live riêng yêu cầu DB test và toàn bộ cấu hình LLM live; CLI `backend/scripts/evaluate_agent.py --mode live --phase full --output <report.json>`. CLI trả exit 1 nếu có FAIL, exit 2 nếu có blocker so sánh; không sửa oracle để tăng điểm.
+
+Catalog hiện tại là `1.1.0-offers-repairs`; dashboard `1.0.0-import-baseline` vẫn chạy bốn KPI sales với nghĩa cũ. Thêm KPI mới vào draft cũ mới nâng catalog của draft. Thử mock: “Giá trị giao dịch, số đề nghị, tỷ lệ đề nghị được chấp nhận và chi phí sửa chữa năm 2025”. Backend tạo ba query riêng, không join các fact. Tỷ lệ API là Decimal string 0–1, UI hiển thị phần trăm; đơn vị tiền vẫn là đơn vị của dataset.
 
 ## Migration metadata P1-T02
 
@@ -151,4 +236,19 @@ Script có thể chạy lặp lại mà không tạo username trùng. Không ghi
 $env:AUTH_TEST_DATABASE_URL = '<runtime-role-url-on-test-db>'
 .\.venv\Scripts\python.exe -m pytest backend\tests\integration\test_auth.py -q
 ```
+
+## OpenAPI và TypeScript contracts P2-T01
+
+Pydantic trong `backend/app/schemas/` là nguồn chuẩn. Không sửa tay file generated. Sau khi đổi contract, chạy đúng thứ tự:
+
+```powershell
+Push-Location frontend
+npm run generate:api
+npm run typecheck
+Pop-Location
+```
+
+`generate:api` luôn export OpenAPI từ backend trước rồi mới chạy `openapi-typescript`; vì vậy nó không thể âm thầm sinh type từ `openapi.json` cũ.
+
+`GET /api/catalog` yêu cầu session. Builder nhận thêm view, biểu thức SQL allowlisted và source columns; Viewer chỉ nhận định nghĩa nghiệp vụ, unit, grain, trường ngày và dimensions.
 

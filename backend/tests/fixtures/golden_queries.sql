@@ -1,4 +1,6 @@
 -- P0-T02 independent PostgreSQL golden queries.
+-- Runtime catalog 1.1.0-offers-repairs enables all seven formulas below;
+-- legacy 1.0.0-import-baseline continues to expose its four sales KPIs only.
 -- Evidence baseline: SQL import SHA-256
 -- c585831fc15942bfa3f3fa793d4d4ebedfde81905ae1214781431001043abbe3
 --

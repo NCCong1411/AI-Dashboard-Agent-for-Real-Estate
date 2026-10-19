@@ -1,6 +1,5 @@
 # Local configuration and secrets
-.env
-.env.*
+.env*
 !.env.example
 backend/.env
 frontend/.env.local
@@ -22,6 +21,10 @@ node_modules/
 frontend/.next/
 frontend/out/
 frontend/coverage/
+frontend/test-results/
+frontend/playwright-report/
+frontend/test-results-live/
+frontend/playwright-report-live/
 *.tsbuildinfo
 
 # Runtime output

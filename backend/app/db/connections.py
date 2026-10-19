@@ -12,6 +12,24 @@ from app.config import Settings
 
 
 ReaderScope = Literal["ALL", "CA", "TX"]
+SOURCE_TABLES = (
+    "agencies",
+    "agents",
+    "agent_agencies",
+    "appraisers",
+    "clients",
+    "inspectors",
+    "neighbourhoods",
+    "payment_methods",
+    "property_types",
+    "properties",
+    "appraisals",
+    "inspections",
+    "offers",
+    "property_neighbourhoods",
+    "repairs",
+    "transactions",
+)
 READER_URL_FIELDS: dict[ReaderScope, str] = {
     "ALL": "reader_all_database_url",
     "CA": "reader_ca_database_url",
@@ -55,11 +73,200 @@ def require_migration_ready(settings: Settings) -> URL:
 
 def create_runtime_engine(settings: Settings) -> Engine:
     validate_separate_database_roles(settings)
-    return create_engine(
-        _configured_url(settings, "runtime_database_url"),
+    selected_url = _configured_url(settings, "runtime_database_url")
+    selected_user = selected_url.username
+    if not selected_user:
+        raise RuntimeError("RUNTIME_DATABASE_URL must include an explicit database role")
+    engine = create_engine(
+        selected_url,
         pool_pre_ping=True,
         hide_parameters=True,
+        connect_args={"connect_timeout": settings.database_connect_timeout_seconds},
+        pool_timeout=settings.database_connect_timeout_seconds,
     )
+
+    @event.listens_for(engine, "connect")
+    def validate_runtime_principal(dbapi_connection, _connection_record) -> None:
+        """Reject a runtime connection with excess or insufficient privileges."""
+        cursor = dbapi_connection.cursor()
+        try:
+            cursor.execute("SET LOCAL statement_timeout='5s'")
+            cursor.execute(
+                """
+                SELECT session_user, current_user, r.rolcanlogin, r.rolsuper,
+                       r.rolcreatedb, r.rolcreaterole, r.rolreplication,
+                       r.rolbypassrls,
+                       has_database_privilege(current_user,current_database(),'CREATE'),
+                       EXISTS (
+                         SELECT 1 FROM pg_namespace n
+                         WHERE n.nspname !~ '^pg_'
+                           AND n.nspname <> 'information_schema'
+                           AND has_schema_privilege(current_user,n.oid,'CREATE')
+                       ),
+                       EXISTS (
+                         SELECT 1 FROM pg_namespace n
+                         WHERE n.nspname !~ '^pg_'
+                           AND n.nspname <> 'information_schema'
+                           AND (
+                             n.nspowner=r.oid OR
+                             pg_has_role(r.oid,n.nspowner,'USAGE') OR
+                             pg_has_role(r.oid,n.nspowner,'SET')
+                           )
+                       ),
+                       EXISTS (
+                         SELECT 1 FROM pg_class c
+                         JOIN pg_namespace n ON n.oid=c.relnamespace
+                         WHERE n.nspname !~ '^pg_'
+                           AND n.nspname <> 'information_schema'
+                           AND (
+                             c.relowner=r.oid OR
+                             pg_has_role(r.oid,c.relowner,'USAGE') OR
+                             pg_has_role(r.oid,c.relowner,'SET')
+                           )
+                       ),
+                       EXISTS (
+                         SELECT 1 FROM pg_class c
+                         JOIN pg_namespace n ON n.oid=c.relnamespace
+                         WHERE n.nspname='public'
+                           AND c.relname = ANY(%s)
+                           AND (
+                             has_table_privilege(current_user,c.oid,
+                               'SELECT,INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER') OR
+                             has_any_column_privilege(current_user,c.oid,
+                               'SELECT,INSERT,UPDATE,REFERENCES')
+                           )
+                       ),
+                       EXISTS (
+                         SELECT 1 FROM pg_class c
+                         JOIN pg_namespace n ON n.oid=c.relnamespace
+                         WHERE n.nspname='analytics'
+                           AND (
+                             (c.relkind IN ('r','p','v','m','f') AND (
+                               has_table_privilege(current_user,c.oid,
+                                 'SELECT,INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER') OR
+                               has_any_column_privilege(current_user,c.oid,
+                                 'SELECT,INSERT,UPDATE,REFERENCES')
+                             )) OR
+                             (c.relkind='S' AND has_sequence_privilege(
+                               current_user,c.oid,'USAGE,SELECT,UPDATE'
+                             ))
+                           )
+                       ),
+                       EXISTS (
+                         SELECT 1 FROM pg_class c
+                         JOIN pg_namespace n ON n.oid=c.relnamespace
+                         WHERE n.nspname='app' AND c.relkind IN ('r','p')
+                           AND NOT (
+                             has_table_privilege(current_user,c.oid,'SELECT') AND
+                             has_table_privilege(current_user,c.oid,'INSERT') AND
+                             has_table_privilege(current_user,c.oid,'UPDATE') AND
+                             has_table_privilege(current_user,c.oid,'DELETE')
+                           )
+                       ) OR NOT EXISTS (
+                         SELECT 1 FROM pg_class c
+                         JOIN pg_namespace n ON n.oid=c.relnamespace
+                         WHERE n.nspname='app' AND c.relkind IN ('r','p')
+                       ),
+                       EXISTS (
+                         SELECT 1 FROM pg_class c
+                         JOIN pg_namespace n ON n.oid=c.relnamespace
+                         WHERE n.nspname='app' AND c.relkind='S'
+                           AND NOT (
+                             has_sequence_privilege(current_user,c.oid,'USAGE') AND
+                             has_sequence_privilege(current_user,c.oid,'SELECT')
+                           )
+                       )
+                FROM pg_roles r WHERE r.rolname=current_user
+                """,
+                (list(SOURCE_TABLES),),
+            )
+            principal = cursor.fetchone()
+            if principal is None:
+                raise RuntimeError("runtime database principal is not a PostgreSQL role")
+            if principal[0] != selected_user or principal[1] != selected_user:
+                raise RuntimeError("runtime database URL resolved to an unexpected principal")
+            if principal[2] is not True or any(principal[3:8]):
+                raise RuntimeError("runtime database principal has unsafe role attributes")
+            if any(principal[8:14]):
+                raise RuntimeError("runtime database principal has forbidden privileges")
+            if any(principal[14:]):
+                raise RuntimeError("runtime database principal lacks required app privileges")
+
+            cursor.execute(
+                """
+                SELECT member.rolsuper, member.rolcreatedb, member.rolcreaterole,
+                       member.rolreplication, member.rolbypassrls,
+                       has_database_privilege(member.oid,current_database(),'CREATE'),
+                       EXISTS (
+                         SELECT 1 FROM pg_namespace n
+                         WHERE n.nspname !~ '^pg_'
+                           AND n.nspname <> 'information_schema'
+                           AND has_schema_privilege(member.oid,n.oid,'CREATE')
+                       ),
+                       EXISTS (
+                         SELECT 1 FROM pg_namespace n
+                         WHERE n.nspname !~ '^pg_'
+                           AND n.nspname <> 'information_schema'
+                           AND (
+                             n.nspowner=member.oid OR
+                             pg_has_role(member.oid,n.nspowner,'USAGE') OR
+                             pg_has_role(member.oid,n.nspowner,'SET')
+                           )
+                       ),
+                       EXISTS (
+                         SELECT 1 FROM pg_class c
+                         JOIN pg_namespace n ON n.oid=c.relnamespace
+                         WHERE n.nspname !~ '^pg_'
+                           AND n.nspname <> 'information_schema'
+                           AND (
+                             c.relowner=member.oid OR
+                             pg_has_role(member.oid,c.relowner,'USAGE') OR
+                             pg_has_role(member.oid,c.relowner,'SET')
+                           )
+                       ),
+                       EXISTS (
+                         SELECT 1 FROM pg_class c
+                         JOIN pg_namespace n ON n.oid=c.relnamespace
+                         WHERE n.nspname='public' AND c.relname = ANY(%s)
+                           AND (
+                             has_table_privilege(member.oid,c.oid,
+                               'SELECT,INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER') OR
+                             has_any_column_privilege(member.oid,c.oid,
+                               'SELECT,INSERT,UPDATE,REFERENCES')
+                           )
+                       ),
+                       EXISTS (
+                         SELECT 1 FROM pg_class c
+                         JOIN pg_namespace n ON n.oid=c.relnamespace
+                         WHERE n.nspname='analytics'
+                           AND (
+                             (c.relkind IN ('r','p','v','m','f') AND (
+                               has_table_privilege(member.oid,c.oid,
+                                 'SELECT,INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER') OR
+                               has_any_column_privilege(member.oid,c.oid,
+                                 'SELECT,INSERT,UPDATE,REFERENCES')
+                             )) OR
+                             (c.relkind='S' AND has_sequence_privilege(
+                               member.oid,c.oid,'USAGE,SELECT,UPDATE'
+                             ))
+                           )
+                       )
+                FROM pg_roles member
+                WHERE member.rolname <> current_user
+                  AND (
+                    pg_has_role(current_user,member.oid,'USAGE') OR
+                    pg_has_role(current_user,member.oid,'SET')
+                  )
+                """,
+                (list(SOURCE_TABLES),),
+            )
+            if any(any(role) for role in cursor.fetchall()):
+                raise RuntimeError("runtime database role membership is unsafe")
+        finally:
+            cursor.close()
+            dbapi_connection.rollback()
+
+    return engine
 
 
 def create_migration_engine(settings: Settings) -> Engine:
@@ -67,6 +274,7 @@ def create_migration_engine(settings: Settings) -> Engine:
         require_migration_ready(settings),
         poolclass=NullPool,
         hide_parameters=True,
+        connect_args={"connect_timeout": settings.database_connect_timeout_seconds},
     )
 
 
@@ -91,7 +299,9 @@ def create_reader_engine(settings: Settings, scope: ReaderScope) -> Engine:
             raise RuntimeError(
                 f"{selected_field.upper()} must use a database role distinct from {field.upper()}"
             )
-    engine = create_engine(selected_url, pool_pre_ping=True, hide_parameters=True)
+    engine = create_engine(selected_url, pool_pre_ping=True, hide_parameters=True,
+                           connect_args={"connect_timeout": settings.database_connect_timeout_seconds},
+                           pool_timeout=settings.database_connect_timeout_seconds)
 
     @event.listens_for(engine, "connect")
     def validate_reader_principal(dbapi_connection, _connection_record) -> None:
@@ -100,6 +310,7 @@ def create_reader_engine(settings: Settings, scope: ReaderScope) -> Engine:
         groups = tuple(READER_GROUPS.values())
         cursor = dbapi_connection.cursor()
         try:
+            cursor.execute("SET LOCAL statement_timeout='5s'")
             cursor.execute(
                 """
                 SELECT current_user, r.rolsuper, r.rolcreatedb, r.rolcreaterole,

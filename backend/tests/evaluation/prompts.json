@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0.0",
-  "catalog_version": "1.0.0-import-baseline",
+  "catalog_version": "1.1.0-offers-repairs",
   "locale": "vi-VN",
   "timezone": "Asia/Ho_Chi_Minh",
   "evaluation_policy": {
@@ -16,6 +16,12 @@
     "unsupported_case_pass_requires": ["outcome", "reason_code", "explanation", "must_not_generate_plan", "must_not_query", "authorization"],
     "allowed_run_statuses": ["PASS", "FAIL", "BLOCKED", "NOT_RUN"],
     "not_pass_statuses": ["BLOCKED", "NOT_RUN", "SKIPPED"],
+    "manual_semantic_review": {
+      "approved_on": "2026-10-19",
+      "applies_only_to": ["ambiguous.required_question", "unsupported.explanation_must_include"],
+      "requires": ["frozen_live_artifact_hash", "case_by_case_rationale", "correct_outcome_and_reason_codes", "correct_authorization_and_scope", "no_draft_or_query"],
+      "cannot_override": ["raw_status", "valid_plan_diff", "sql_result", "authorization", "extra_or_missing_reason_code", "blocked_case"]
+    },
     "authorization_order": "Authorization denial must happen before Agent or database execution.",
     "evidence_required": ["case_id", "mode", "provider_model_config", "actual_outcome", "plan_diff", "sql_result", "scope_authorization", "latency_ms", "status", "artifact"],
     "report_mock_and_live_separately": true,

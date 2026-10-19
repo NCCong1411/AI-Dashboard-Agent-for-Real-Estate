@@ -57,6 +57,9 @@ if (-not $pgDump -or -not $pgRestore) {
 
 $userParts = $uri.UserInfo -split ':', 2
 $temporaryPgEnvironment = @{
+    PGHOSTADDR = $null
+    PGSERVICE = $null
+    PGSERVICEFILE = $null
     PGHOST = $uri.Host
     PGPORT = if ($uri.IsDefaultPort) { "5432" } else { [string]$uri.Port }
     PGDATABASE = [System.Uri]::UnescapeDataString($uri.AbsolutePath.TrimStart('/'))
@@ -64,18 +67,16 @@ $temporaryPgEnvironment = @{
     PGPASSWORD = if ($userParts.Count -eq 2) { [System.Uri]::UnescapeDataString($userParts[1]) } else { "" }
 }
 $previousPgEnvironment = @{}
-foreach ($name in $temporaryPgEnvironment.Keys) {
-    $previousPgEnvironment[$name] = [System.Environment]::GetEnvironmentVariable($name, "Process")
-    [System.Environment]::SetEnvironmentVariable($name, $temporaryPgEnvironment[$name], "Process")
-}
-
-$resolvedOutput = [System.IO.Path]::GetFullPath($OutputDirectory)
-New-Item -ItemType Directory -Path $resolvedOutput -Force | Out-Null
-$stamp = Get-Date -Format "yyyyMMdd-HHmmss"
-$backupPath = Join-Path $resolvedOutput "pre-migration-$stamp.dump"
-$hashPath = "$backupPath.sha256"
-
 try {
+    foreach ($name in $temporaryPgEnvironment.Keys) {
+        $previousPgEnvironment[$name] = [System.Environment]::GetEnvironmentVariable($name, "Process")
+        [System.Environment]::SetEnvironmentVariable($name, $temporaryPgEnvironment[$name], "Process")
+    }
+    $resolvedOutput = [System.IO.Path]::GetFullPath($OutputDirectory)
+    New-Item -ItemType Directory -Path $resolvedOutput -Force | Out-Null
+    $stamp = Get-Date -Format "yyyyMMdd-HHmmss"
+    $backupPath = Join-Path $resolvedOutput "pre-migration-$stamp.dump"
+    $hashPath = "$backupPath.sha256"
     & $pgDump --format=custom --file=$backupPath --no-owner --no-privileges
     if ($LASTEXITCODE -ne 0) {
         throw "pg_dump failed with exit code $LASTEXITCODE."
@@ -85,7 +86,7 @@ try {
         throw "pg_restore could not read the backup archive."
     }
 } finally {
-    foreach ($name in $temporaryPgEnvironment.Keys) {
+    foreach ($name in $previousPgEnvironment.Keys) {
         [System.Environment]::SetEnvironmentVariable($name, $previousPgEnvironment[$name], "Process")
     }
 }

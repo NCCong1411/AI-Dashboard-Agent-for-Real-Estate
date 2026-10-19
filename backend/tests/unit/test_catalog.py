@@ -5,7 +5,6 @@ from __future__ import annotations
 import importlib
 import json
 import os
-import shutil
 import subprocess
 import sys
 from decimal import Decimal
@@ -54,11 +53,30 @@ def test_analysis_plan_rejects_unknowns_and_requires_versions() -> None:
     ):
         with pytest.raises(ValidationError):
             AnalysisPlan.model_validate(invalid)
-    with pytest.raises(ValueError, match="in requires a list"):
+    with pytest.raises(ValidationError, match="in requires a list"):
+        AnalysisPlan.model_validate(
+            valid_plan(filters=[{"field": "state", "op": "in", "value": "CA"}])
+        )
+    for invalid_filter in (
+        {"field": "state", "op": "eq", "value": 6},
+        {"field": "city", "op": "in", "value": ["Austin", 7]},
+        {"field": "property_type", "op": "eq", "value": True},
+        {"field": "agent", "op": "eq", "value": "42"},
+        {"field": "agent", "op": "eq", "value": True},
+        {"field": "agent", "op": "in", "value": [1, "2"]},
+    ):
+        with pytest.raises(ValidationError):
+            AnalysisPlan.model_validate(valid_plan(filters=[invalid_filter]))
+    for valid_filter in (
+        {"field": "state", "op": "eq", "value": "CA"},
+        {"field": "city", "op": "in", "value": ["Austin", "Dallas"]},
+        {"field": "agent", "op": "eq", "value": 42},
+        {"field": "agent", "op": "in", "value": [1, 2]},
+    ):
+        AnalysisPlan.model_validate(valid_plan(filters=[valid_filter]))
+    with pytest.raises(ValueError, match="sort field must be selected"):
         validate_plan_semantics(
-            AnalysisPlan.model_validate(
-                valid_plan(filters=[{"field": "state", "op": "in", "value": "CA"}])
-            )
+            AnalysisPlan.model_validate(valid_plan(sort=[{"field": "city", "direction": "asc"}]))
         )
 
 
@@ -68,7 +86,7 @@ def test_dashboard_references_and_decimal_json_round_trip() -> None:
             "schema_version": SCHEMA_VERSION,
             "catalog_version": CATALOG_VERSION,
             "title": "Sales",
-            "queries": [{"id": "sales", "plan": valid_plan()}],
+            "queries": [{"id": "sales", "plan": valid_plan(dimensions=[])}],
             "widgets": [
                 {
                     "id": "sales-card",
@@ -78,6 +96,7 @@ def test_dashboard_references_and_decimal_json_round_trip() -> None:
                     "kpi": "sales_value",
                 }
             ],
+            "layout": [{"widget_id": "sales-card", "x": 0, "y": 0, "width": 4, "height": 2}],
         }
     )
     assert dashboard.widgets[0].query_id == "sales"
@@ -102,7 +121,8 @@ def test_dashboard_references_and_decimal_json_round_trip() -> None:
 
 def test_catalog_is_versioned_and_hides_sql_from_viewer(monkeypatch: pytest.MonkeyPatch) -> None:
     assert set(KPI_CATALOG) == {
-        "sales_value", "transaction_count", "average_sale_value", "sold_property_count"
+        "sales_value", "transaction_count", "average_sale_value", "sold_property_count",
+        "offer_count", "accepted_offer_rate", "repair_cost",
     }
     monkeypatch.setenv("APP_ENV", "test")
     get_settings.cache_clear()
@@ -134,6 +154,11 @@ def test_generated_types_are_reproducible_from_openapi(tmp_path: Path) -> None:
     executable = ROOT / "frontend" / "node_modules" / ".bin" / "openapi-typescript.cmd"
     if not executable.exists():
         pytest.skip("frontend dependencies are not installed")
+    package = json.loads((ROOT / "frontend" / "package.json").read_text(encoding="utf-8"))
+    generate_command = package["scripts"]["generate:api"]
+    assert generate_command.index("export_openapi.py") < generate_command.index(
+        "openapi-typescript"
+    )
     openapi_path = tmp_path / "openapi.json"
     generated_path = tmp_path / "api.generated.ts"
     environment = os.environ.copy()

@@ -2,6 +2,7 @@
 
 import {useEffect, useState} from "react";
 import {useRouter} from "next/navigation";
+import Link from "next/link";
 
 import {AuthUser, currentUser, logout} from "../lib/api";
 
@@ -115,6 +116,7 @@ export default function Home() {
               ? `Không kết nối được backend: ${error}`
               : "Đang kiểm tra backend qua /api/health…"}
         </div>
+        {user ? <p><Link href="/dashboards">Mở dashboard đã duyệt →</Link></p> : null}
         {error ? <p className="authError" role="alert">{error}</p> : null}
       </section>
     </main>

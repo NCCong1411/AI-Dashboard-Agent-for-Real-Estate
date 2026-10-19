@@ -9,8 +9,10 @@ from pydantic.json_schema import models_json_schema
 
 from .api.auth import router as auth_router
 from .api.catalog import router as catalog_router
+from .api.dashboards import router as dashboards_router
+from .api.conversations import router as conversations_router
 from .config import get_settings
-from .schemas.agent import AgentResponse
+from .schemas.agent import AgentResponse, PlannerDecision
 from .schemas.analysis import AnalysisPlan
 from .schemas.dashboard import DashboardSpec, QueryResult, WidgetSpec
 
@@ -25,6 +27,16 @@ app = FastAPI(
 )
 app.include_router(auth_router)
 app.include_router(catalog_router)
+app.include_router(dashboards_router)
+app.include_router(conversations_router)
+
+
+@app.middleware("http")
+async def private_api_response(request: Request, call_next):
+    response = await call_next(request)
+    if request.url.path.startswith("/api/"):
+        response.headers["Cache-Control"] = "no-store"
+    return response
 
 
 def versioned_openapi() -> dict:
@@ -39,6 +51,7 @@ def versioned_openapi() -> dict:
             (WidgetSpec, "validation"),
             (QueryResult, "validation"),
             (AgentResponse, "validation"),
+            (PlannerDecision, "validation"),
         ],
         ref_template="#/components/schemas/{model}",
     )

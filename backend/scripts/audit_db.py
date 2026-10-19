@@ -2,13 +2,14 @@
 """Read-only audit of the real-estate PostgreSQL database or its SQL import.
 
 The import-file audit has no third-party dependencies. Live database inspection
-requires psycopg 3 and a DSN supplied through --dsn, AUDIT_DATABASE_URL, or
-DATABASE_URL. Connection strings are never included in output.
+requires psycopg 3 and a DSN supplied through --dsn, AUDIT_DATABASE_URL,
+backend/.env, or DATABASE_URL. Connection strings are never included in output.
 """
 
 from __future__ import annotations
 
 import argparse
+from contextlib import contextmanager
 import hashlib
 import json
 import os
@@ -23,6 +24,39 @@ from typing import Any, Iterable
 
 ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_SQL = ROOT / "data" / "real-estate-sales-sample-database-v3-sql-postgres.sql"
+
+
+@contextmanager
+def isolated_libpq_environment():
+    """Do not let inherited service/hostaddr settings redirect explicit URLs."""
+    keys = ("PGHOSTADDR", "PGSERVICE", "PGSERVICEFILE")
+    previous = {key: os.environ.pop(key, None) for key in keys}
+    try:
+        yield
+    finally:
+        for key, value in previous.items():
+            if value is not None:
+                os.environ[key] = value
+
+
+def configured_audit_dsn(explicit: str | None) -> str | None:
+    """Resolve audit credentials without loading unrelated application secrets."""
+    if explicit:
+        return explicit
+    direct = os.getenv("AUDIT_DATABASE_URL")
+    if direct:
+        return direct
+    env_file = ROOT / "backend" / ".env"
+    if env_file.is_file():
+        try:
+            from dotenv import dotenv_values
+        except ImportError:
+            pass  # Import-only audit still works without project dependencies.
+        else:
+            local = dotenv_values(env_file, interpolate=False).get("AUDIT_DATABASE_URL")
+            if local:
+                return local
+    return os.getenv("DATABASE_URL") or None
 
 
 def identifier_fingerprint(value: str) -> str:
@@ -836,13 +870,13 @@ def public_result(result: dict[str, Any]) -> dict[str, Any]:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--sql", type=Path, default=DEFAULT_SQL, help="SQL import to audit")
-    parser.add_argument("--dsn", help="PostgreSQL DSN; preferably use AUDIT_DATABASE_URL")
+    parser.add_argument("--dsn", help="PostgreSQL DSN; preferably use AUDIT_DATABASE_URL in backend/.env")
     parser.add_argument("--require-db", action="store_true", help="fail if no live DSN is available")
     parser.add_argument("--output", type=Path, help="write JSON report to this file")
     args = parser.parse_args()
 
     import_audit = parse_import(args.sql.resolve())
-    dsn = args.dsn or os.getenv("AUDIT_DATABASE_URL") or os.getenv("DATABASE_URL")
+    dsn = configured_audit_dsn(args.dsn)
     report: dict[str, Any] = {
         "audit_timestamp_utc": datetime.now(timezone.utc).isoformat(),
         "import_audit": public_result(import_audit),
@@ -863,7 +897,7 @@ def main() -> int:
     else:
         report["database_audit"] = {
             "status": "blocked",
-            "reason": "No DSN supplied via --dsn, AUDIT_DATABASE_URL, or DATABASE_URL.",
+            "reason": "No DSN supplied via --dsn, AUDIT_DATABASE_URL, backend/.env, or DATABASE_URL.",
         }
         if args.require_db:
             exit_code = 2
@@ -877,4 +911,5 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    with isolated_libpq_environment():
+        sys.exit(main())

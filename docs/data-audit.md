@@ -7,11 +7,11 @@ Thời điểm chạy lại: **2026-10-12 10:21:39 UTC** (17:21:39 Asia/Ho_Chi_M
 | Nguồn bằng chứng | Trạng thái | Kết luận được phép |
 |---|---|---|
 | File import `data/real-estate-sales-sample-database-v3-sql-postgres.sql` | Đã khảo sát đầy đủ, chỉ đọc | Các số liệu trong mục “Kết quả file import” |
-| PostgreSQL đang chạy | **Bị chặn** | Chưa xác minh version, database, schema thực tế, row count, index, privilege hoặc chênh lệch so với import |
+| PostgreSQL đang chạy | **Đã audit chỉ đọc ngày 17/10/2026** | PostgreSQL 16.9, database `real_estate_db`, đủ 16 bảng; các chênh lệch schema, khóa, số dòng và baseline đều rỗng |
 
-Blocker cụ thể: PostgreSQL tại `localhost:5432` trả trạng thái `accepting connections`, nhưng không có `AUDIT_DATABASE_URL`, `DATABASE_URL`, biến `DB_*`/`PG*`, PG service hoặc `pgpass.conf`; workspace cũng không có file cấu hình credential DB. Không đoán/thử mật khẩu mặc định và không ghi DSN/secret vào log. Thông tin PostgreSQL 16.9 và database `real_estate_db` trong kế hoạch vẫn là thông tin chưa xác minh bằng phiên đăng nhập.
+Lịch sử trước 17/10: PostgreSQL tại `localhost:5432` trả trạng thái `accepting connections` nhưng chưa có credential audit. Đã giải quyết bằng URL audit trong `.env` ignored; báo cáo không ghi DSN/secret.
 
-P0-T01 **chưa đạt gate kiểm tra DB thật** cho tới khi chạy script bằng credential chỉ đọc. Phần khảo sát file import đã hoàn tất và không thay đổi file nguồn hay database.
+P0-T01 đạt gate khảo sát DB thật bằng `BEGIN READ ONLY`. Credential hiện là `postgres` superuser; audit xác minh dữ liệu và cấu trúc nhưng không chứng minh RLS của reader hay cấp quyền runtime. Chưa migration/ghi vào DB chính.
 
 ## Cách tái lập
 
@@ -21,11 +21,10 @@ Khảo sát file import, không cần package ngoài:
 python backend/scripts/audit_db.py
 ```
 
-Khảo sát đồng thời DB thật (cần `psycopg` 3 và credential chỉ đọc):
+Khảo sát đồng thời DB thật (cần `psycopg` 3). Điền `AUDIT_DATABASE_URL=postgresql://postgres:<mật-khẩu>@localhost:5432/real_estate_db` trong `backend/.env`, rồi chạy:
 
 ```powershell
-$env:AUDIT_DATABASE_URL = '<dsn-read-only>'
-python backend/scripts/audit_db.py --require-db
+.venv\Scripts\python.exe backend/scripts/audit_db.py --require-db
 ```
 
 Script mở kết nối live bằng `BEGIN READ ONLY`, bắt buộc `transaction_read_only=on`, đặt timeout kết nối 5 giây, chỉ chạy `SELECT`/catalog queries, rollback rồi đóng kết nối. Output không chứa DSN, giá trị dữ liệu hay tên role/owner nguyên văn (chỉ fingerprint 12 ký tự). Audit live kiểm kê direct/effective table privileges, quyền schema, owner fingerprint, RLS, PK/FK/UNIQUE/index và so sánh constraint/schema/count/baseline với import. `--require-db` trả exit code 2 khi thiếu DSN hoặc audit live lỗi.
@@ -143,12 +142,32 @@ Lần validation P0-T02 ngày 12/10/2026 chạy `python -m pytest -q` trong `bac
 
 ## Hạn chế và quyết định cho task sau
 
-- Bản dự thảo catalog P0-T02 đã được kiểm chứng theo file import; baseline DB thật vẫn chưa thể chốt cho tới khi có credential chỉ đọc.
+- Catalog P0-T02 đã được kiểm chứng theo file import; audit DB thật ngày 17/10 xác nhận baseline và golden SQL độc lập đạt 15/15 case trên DB chính.
 - Các trường `email`, `phone`, tên người và địa chỉ là PII/nhạy cảm; lớp analytics sau này không được cấp các cột không cần thiết.
 - Các timestamp trong file không kèm múi giờ. Không suy diễn timezone.
-- Chưa xác minh owner, consumers, RLS, grants hoặc index vật lý của DB đang chạy; không triển khai migration/RLS trong P0-T01.
+- Audit DB chính ngày 17/10 đã kiểm kê owner fingerprint, quyền, RLS và index vật lý; tài khoản audit là superuser/BYPASSRLS nên không dùng kết quả này làm bằng chứng quyền reader.
 
-## Trạng thái triển khai bảo mật analytics P1-T03
+## Audit database chính ngày 17/10/2026
+
+Chạy `.venv\Scripts\python.exe backend/scripts/audit_db.py --require-db --output backend/.runtime/main-db-audit.json` trên Windows bằng credential trong `.env` ignored. Artifact JSON ghi timestamp `2026-10-16T21:08:34Z` (04:08:34 ngày 17/10 Asia/Ho_Chi_Minh). Kết nối xác nhận `transaction_read_only=on`; script chỉ chạy SELECT/catalog, rollback và đóng kết nối. Không ghi DSN hoặc dữ liệu PII vào report.
+
+DB xác nhận PostgreSQL **16.9**, tên `real_estate_db`, 16 bảng nguồn tổng 2.203 dòng, 16 PK, 16 FK, 5 UNIQUE. Không có duplicate PK/UNIQUE hoặc FK orphan. So với file import: `missing_tables`, `column_differences`, `primary_key_differences`, `unique_constraint_differences`, `foreign_key_differences`, `row_count_differences`, `baseline_differences` đều rỗng. NULL, khoảng ngày, index, quyền và security của từng bảng nằm trong artifact. Các baseline thật: ALL 1.000 giao dịch/870.798.679,64/125 bất động sản; CA 135/107.064.313,73/22; TX 132/128.635.636,80/14. Phân tích fan-out đại lý/lịch sử và property–neighbourhood cũng khớp dữ liệu import.
+
+Role audit là superuser/BYPASSRLS và có quyền schema `CREATE`; bốn bảng fact/dimension `properties`, `transactions`, `offers`, `repairs` chưa bật RLS trên DB chính. Đây là trạng thái trước migration, không phải kiểm chứng reader ALL/CA/TX. Các việc tạo role, backup và migration phải theo runbook, thử trên cluster khôi phục riêng trước khi tác động DB chính.
+
+`backend/scripts/verify_golden_db.py` dùng chính `backend/tests/fixtures/golden_queries.sql` (ba prepared statement độc lập cho sales/offers/repairs), so sánh `backend/tests/fixtures/golden_results.json` bằng Decimal và kiểm tra trạng thái `no_data`. Chạy trên DB chính bằng `AUDIT_DATABASE_URL`, `BEGIN READ ONLY`, `statement_timeout=5s`, rollback: **15/15 case đạt**, gồm ALL/CA/TX, năm 2025, kỳ rỗng và sáu ngày biên. Output chỉ chứa case ID và tên field khác biệt khi fail; không chứa DSN hoặc dữ liệu hàng.
+
+## Trạng thái triển khai bảo mật analytics P1-T03 (lịch sử trước 15/10/2026)
 
 Migration `0002_analytics_security` đã được chuẩn bị với RLS cho `properties`, `transactions`, `offers`, `repairs`, column-level grants không gồm PII, và ba view `security_invoker`. Migration có guard từ chối ghi đè cấu hình RLS/tên reader role, từ chối `PUBLIC` grant/CREATE không an toàn và consumer cũ chưa review trước khi bật default-deny; migration không chứa DML nguồn. Reader pool kiểm principal và effective privileges khi kết nối. Đây chưa phải bằng chứng DB thật: chưa có ba reader credential trên DB test đã restore, nên totals CA/TX, quyền trực tiếp/qua view và chống đổi role vẫn `BLOCKED`.
+
+### Cập nhật 15/10/2026 — PostgreSQL test đã restore
+
+`backend/scripts/test_local_postgres.py` đã chạy thành công với PostgreSQL **16.9**, cluster hoàn toàn riêng ở cổng trống. Dataset synthetic được import vào `dashboard_source`, backup custom-format rồi restore sang `dashboard_test`; role migration khác runtime và ba reader login riêng. 2 test migration và 36 test auth/RLS/executor/dashboard API pass, không skip trong lần chạy này. Audit DB chính vẫn chưa chạy; baseline ở trên tiếp tục là baseline import và bản restore test.
+
+Thực thi live đã phát hiện và sửa lỗi `aclexplode` trên ACL cột rỗng trong migration: bỏ việc ép NULL thành mảng rỗng không có dimension, chỉ explode ACL có `cardinality > 0`. Sau sửa, chu kỳ upgrade/downgrade/upgrade giữ nguyên số dòng của đủ 16 bảng nguồn và các probe quyền thực trả SQLSTATE `42501`.
+
+Executor đối chiếu 11 golden sales case (ALL/CA/TX, năm 2025, kỳ rỗng và hai ngày biên), chạy đủ tám dimension không fan-out, alternating scope và scope/filter giao rỗng. Timeout thật được tạo bằng table lock trong DB test; executor rollback và pool truy vấn lại thành công sau khi thả lock. Cùng connection xác nhận `transaction_read_only=on`, `statement_timeout=5s` trong transaction và reset sau khi trả pool.
+
+27 EXPLAIN plan đại diện (tổng + tám dimension, trên ba reader) có root Total Cost tối đa **3905.65**, artifact `backend/.runtime/postgres-test-ab9wb96c/explain-costs.json`. Ngưỡng mặc định chọn **10000** để có khoảng trống cho các query mẫu; cần hiệu chỉnh lại theo statistics và dữ liệu DB chính. Đây là planner units, không phải số đo latency hay tiền.
 

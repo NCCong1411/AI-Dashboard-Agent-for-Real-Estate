@@ -102,6 +102,317 @@
         }
       }
     },
+    "/api/dashboards": {
+      "get": {
+        "tags": [
+          "dashboards"
+        ],
+        "summary": "List Dashboards",
+        "operationId": "list_dashboards_api_dashboards_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/DashboardSummary"
+                  },
+                  "type": "array",
+                  "title": "Response List Dashboards Api Dashboards Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/dashboards/{dashboard_id}": {
+      "get": {
+        "tags": [
+          "dashboards"
+        ],
+        "summary": "Dashboard Detail",
+        "operationId": "dashboard_detail_api_dashboards__dashboard_id__get",
+        "parameters": [
+          {
+            "name": "dashboard_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Dashboard Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DashboardDetail"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/dashboards/{dashboard_id}/query": {
+      "post": {
+        "tags": [
+          "dashboards"
+        ],
+        "summary": "Dashboard Query",
+        "operationId": "dashboard_query_api_dashboards__dashboard_id__query_post",
+        "parameters": [
+          {
+            "name": "dashboard_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Dashboard Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DashboardQueryRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DashboardQueryResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/conversations": {
+      "post": {
+        "tags": [
+          "conversations"
+        ],
+        "summary": "Create Conversation",
+        "operationId": "create_conversation_api_conversations_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateConversationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConversationView"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/conversations/{conversation_id}": {
+      "get": {
+        "tags": [
+          "conversations"
+        ],
+        "summary": "Get Conversation",
+        "operationId": "get_conversation_api_conversations__conversation_id__get",
+        "parameters": [
+          {
+            "name": "conversation_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Conversation Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConversationView"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/conversations/{conversation_id}/messages": {
+      "post": {
+        "tags": [
+          "conversations"
+        ],
+        "summary": "Post Message",
+        "operationId": "post_message_api_conversations__conversation_id__messages_post",
+        "parameters": [
+          {
+            "name": "conversation_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Conversation Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MessageRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/conversations/{conversation_id}/approval": {
+      "post": {
+        "tags": [
+          "conversations"
+        ],
+        "summary": "Approve Draft",
+        "operationId": "approve_draft_api_conversations__conversation_id__approval_post",
+        "parameters": [
+          {
+            "name": "conversation_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Conversation Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApprovalRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApprovalResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/health": {
       "get": {
         "tags": [
@@ -131,6 +442,485 @@
   },
   "components": {
     "schemas": {
+      "AgentError": {
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "retryable": {
+            "default": false,
+            "title": "Retryable",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "code",
+          "message"
+        ],
+        "title": "AgentError",
+        "type": "object"
+      },
+      "AgentFilterSpec": {
+        "additionalProperties": false,
+        "properties": {
+          "field": {
+            "const": "agent",
+            "title": "Field",
+            "type": "string"
+          },
+          "op": {
+            "enum": [
+              "eq",
+              "in"
+            ],
+            "title": "Op",
+            "type": "string"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "items": {
+                  "type": "integer"
+                },
+                "type": "array"
+              }
+            ],
+            "title": "Value"
+          }
+        },
+        "required": [
+          "field",
+          "op",
+          "value"
+        ],
+        "title": "AgentFilterSpec",
+        "type": "object"
+      },
+      "AgentResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "status": {
+            "enum": [
+              "needs_clarification",
+              "awaiting_approval",
+              "completed",
+              "failed"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "draft": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DashboardSpec"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "error": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AgentError"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "outcome": {
+            "anyOf": [
+              {
+                "enum": [
+                  "plan",
+                  "clarification",
+                  "unsupported",
+                  "error"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Outcome"
+          },
+          "reason_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Reason Code"
+          },
+          "reason_codes": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 5,
+            "title": "Reason Codes",
+            "type": "array"
+          },
+          "conversation_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Conversation Id"
+          },
+          "run_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Run Id"
+          },
+          "draft_revision": {
+            "default": 0,
+            "minimum": 0,
+            "title": "Draft Revision",
+            "type": "integer"
+          },
+          "draft_hash": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Draft Hash"
+          },
+          "base_version_number": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Base Version Number"
+          },
+          "scope": {
+            "anyOf": [
+              {
+                "enum": [
+                  "ALL",
+                  "CA",
+                  "TX"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Scope"
+          },
+          "mode": {
+            "default": "mock",
+            "enum": [
+              "mock",
+              "live"
+            ],
+            "title": "Mode",
+            "type": "string"
+          },
+          "results": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/QueryResult"
+            },
+            "title": "Results",
+            "type": "object"
+          },
+          "sql": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Sql",
+            "type": "object"
+          },
+          "changes": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DraftChanges"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "reused_query_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Reused Query Ids",
+            "type": "array"
+          }
+        },
+        "required": [
+          "status",
+          "message"
+        ],
+        "title": "AgentResponse",
+        "type": "object"
+      },
+      "AnalysisPlan": {
+        "additionalProperties": false,
+        "properties": {
+          "schema_version": {
+            "const": "1.0.0",
+            "title": "Schema Version",
+            "type": "string"
+          },
+          "catalog_version": {
+            "enum": [
+              "1.0.0-import-baseline",
+              "1.1.0-offers-repairs"
+            ],
+            "title": "Catalog Version",
+            "type": "string"
+          },
+          "kpis": {
+            "items": {
+              "enum": [
+                "sales_value",
+                "transaction_count",
+                "average_sale_value",
+                "sold_property_count",
+                "offer_count",
+                "accepted_offer_rate",
+                "repair_cost"
+              ],
+              "type": "string"
+            },
+            "maxItems": 4,
+            "minItems": 1,
+            "title": "Kpis",
+            "type": "array"
+          },
+          "dimensions": {
+            "items": {
+              "enum": [
+                "day",
+                "month",
+                "quarter",
+                "year",
+                "state",
+                "city",
+                "property_type",
+                "agent"
+              ],
+              "type": "string"
+            },
+            "maxItems": 4,
+            "title": "Dimensions",
+            "type": "array"
+          },
+          "filters": {
+            "items": {
+              "discriminator": {
+                "mapping": {
+                  "agent": "#/components/schemas/AgentFilterSpec",
+                  "city": "#/components/schemas/StringFilterSpec",
+                  "property_type": "#/components/schemas/StringFilterSpec",
+                  "state": "#/components/schemas/StringFilterSpec"
+                },
+                "propertyName": "field"
+              },
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/StringFilterSpec"
+                },
+                {
+                  "$ref": "#/components/schemas/AgentFilterSpec"
+                }
+              ]
+            },
+            "maxItems": 12,
+            "title": "Filters",
+            "type": "array"
+          },
+          "date_range": {
+            "$ref": "#/components/schemas/DateRange"
+          },
+          "sort": {
+            "items": {
+              "$ref": "#/components/schemas/SortSpec"
+            },
+            "maxItems": 4,
+            "title": "Sort",
+            "type": "array"
+          },
+          "limit": {
+            "anyOf": [
+              {
+                "maximum": 1000,
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Limit"
+          }
+        },
+        "required": [
+          "schema_version",
+          "catalog_version",
+          "kpis"
+        ],
+        "title": "AnalysisPlan",
+        "type": "object"
+      },
+      "ApprovalRequest": {
+        "properties": {
+          "decision": {
+            "type": "string",
+            "enum": [
+              "approve",
+              "reject"
+            ],
+            "title": "Decision"
+          },
+          "draft_revision": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Draft Revision"
+          },
+          "draft_hash": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Draft Hash"
+          },
+          "base_version_number": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Base Version Number"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "decision",
+          "draft_revision",
+          "draft_hash",
+          "base_version_number"
+        ],
+        "title": "ApprovalRequest"
+      },
+      "ApprovalResponse": {
+        "properties": {
+          "decision": {
+            "type": "string",
+            "enum": [
+              "approve",
+              "reject"
+            ],
+            "title": "Decision"
+          },
+          "conversation_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Conversation Id"
+          },
+          "draft_revision": {
+            "type": "integer",
+            "title": "Draft Revision"
+          },
+          "draft_hash": {
+            "type": "string",
+            "title": "Draft Hash"
+          },
+          "dashboard_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dashboard Id"
+          },
+          "version_number": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Version Number"
+          },
+          "checkpoint_synced": {
+            "type": "boolean",
+            "title": "Checkpoint Synced",
+            "default": false
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "decision",
+          "conversation_id",
+          "draft_revision",
+          "draft_hash",
+          "dashboard_id",
+          "version_number"
+        ],
+        "title": "ApprovalResponse"
+      },
       "CatalogKPI": {
         "properties": {
           "id": {
@@ -139,7 +929,10 @@
               "sales_value",
               "transaction_count",
               "average_sale_value",
-              "sold_property_count"
+              "sold_property_count",
+              "offer_count",
+              "accepted_offer_rate",
+              "repair_cost"
             ],
             "title": "Id"
           },
@@ -288,145 +1081,90 @@
         ],
         "title": "CatalogResponse"
       },
-      "HTTPValidationError": {
+      "ConversationMessageView": {
         "properties": {
-          "detail": {
-            "items": {
-              "$ref": "#/components/schemas/ValidationError"
-            },
-            "type": "array",
-            "title": "Detail"
-          }
-        },
-        "type": "object",
-        "title": "HTTPValidationError"
-      },
-      "LoginRequest": {
-        "properties": {
-          "username": {
-            "type": "string",
-            "maxLength": 128,
-            "minLength": 1,
-            "title": "Username"
-          },
-          "password": {
-            "type": "string",
-            "maxLength": 1024,
-            "minLength": 1,
-            "title": "Password"
-          }
-        },
-        "additionalProperties": false,
-        "type": "object",
-        "required": [
-          "username",
-          "password"
-        ],
-        "title": "LoginRequest"
-      },
-      "UserResponse": {
-        "properties": {
-          "username": {
-            "type": "string",
-            "title": "Username"
-          },
           "role": {
             "type": "string",
+            "enum": [
+              "user",
+              "assistant",
+              "system"
+            ],
             "title": "Role"
           },
-          "scope_profile": {
+          "content": {
             "type": "string",
-            "title": "Scope Profile"
+            "title": "Content"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
           }
         },
         "type": "object",
         "required": [
-          "username",
           "role",
-          "scope_profile"
+          "content",
+          "created_at"
         ],
-        "title": "UserResponse"
+        "title": "ConversationMessageView"
       },
-      "ValidationError": {
+      "ConversationView": {
         "properties": {
-          "loc": {
-            "items": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "integer"
-                }
-              ]
-            },
-            "type": "array",
-            "title": "Location"
-          },
-          "msg": {
+          "id": {
             "type": "string",
-            "title": "Message"
+            "format": "uuid",
+            "title": "Id"
           },
-          "type": {
-            "type": "string",
-            "title": "Error Type"
+          "dashboard_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dashboard Id"
           },
-          "input": {
-            "title": "Input"
-          },
-          "ctx": {
-            "type": "object",
-            "title": "Context"
-          }
-        },
-        "type": "object",
-        "required": [
-          "loc",
-          "msg",
-          "type"
-        ],
-        "title": "ValidationError"
-      },
-      "AgentError": {
-        "additionalProperties": false,
-        "properties": {
-          "code": {
-            "title": "Code",
-            "type": "string"
-          },
-          "message": {
-            "title": "Message",
-            "type": "string"
-          },
-          "retryable": {
-            "default": false,
-            "title": "Retryable",
-            "type": "boolean"
-          }
-        },
-        "required": [
-          "code",
-          "message"
-        ],
-        "title": "AgentError",
-        "type": "object"
-      },
-      "AgentResponse": {
-        "additionalProperties": false,
-        "properties": {
           "status": {
+            "type": "string",
             "enum": [
+              "running",
               "needs_clarification",
               "awaiting_approval",
               "completed",
               "failed"
             ],
-            "title": "Status",
-            "type": "string"
+            "title": "Status"
           },
-          "message": {
-            "title": "Message",
-            "type": "string"
+          "draft_revision": {
+            "type": "integer",
+            "title": "Draft Revision"
+          },
+          "draft_hash": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Hash"
+          },
+          "base_version_number": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Base Version Number"
           },
           "draft": {
             "anyOf": [
@@ -436,118 +1174,220 @@
               {
                 "type": "null"
               }
-            ],
-            "default": null
+            ]
           },
-          "error": {
+          "messages": {
+            "items": {
+              "$ref": "#/components/schemas/ConversationMessageView"
+            },
+            "type": "array",
+            "title": "Messages"
+          },
+          "response": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/AgentError"
+                "$ref": "#/components/schemas/AgentResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "preview": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AgentResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "approval": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ApprovalResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "mode": {
+            "type": "string",
+            "enum": [
+              "mock",
+              "live"
+            ],
+            "title": "Mode"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "dashboard_id",
+          "status",
+          "draft_revision",
+          "draft_hash",
+          "base_version_number",
+          "draft",
+          "messages",
+          "response",
+          "mode"
+        ],
+        "title": "ConversationView"
+      },
+      "CreateConversationRequest": {
+        "properties": {
+          "dashboard_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
               },
               {
                 "type": "null"
               }
             ],
-            "default": null
+            "title": "Dashboard Id"
           }
         },
-        "required": [
-          "status",
-          "message"
-        ],
-        "title": "AgentResponse",
-        "type": "object"
-      },
-      "AnalysisPlan": {
         "additionalProperties": false,
+        "type": "object",
+        "title": "CreateConversationRequest"
+      },
+      "DashboardDetail": {
         "properties": {
-          "schema_version": {
-            "const": "1.0.0",
-            "title": "Schema Version",
-            "type": "string"
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
           },
-          "catalog_version": {
-            "const": "1.0.0-import-baseline",
-            "title": "Catalog Version",
-            "type": "string"
+          "title": {
+            "type": "string",
+            "title": "Title"
           },
-          "kpis": {
-            "items": {
-              "enum": [
-                "sales_value",
-                "transaction_count",
-                "average_sale_value",
-                "sold_property_count"
-              ],
-              "type": "string"
-            },
-            "maxItems": 4,
-            "minItems": 1,
-            "title": "Kpis",
-            "type": "array"
+          "version_number": {
+            "type": "integer",
+            "title": "Version Number"
           },
-          "dimensions": {
-            "default": [],
-            "items": {
-              "enum": [
-                "day",
-                "month",
-                "quarter",
-                "year",
-                "state",
-                "city",
-                "property_type",
-                "agent"
-              ],
-              "type": "string"
-            },
-            "maxItems": 4,
-            "title": "Dimensions",
-            "type": "array"
+          "approved_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Approved At"
           },
+          "spec": {
+            "$ref": "#/components/schemas/DashboardSpec"
+          },
+          "sql": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "string"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sql"
+          },
+          "can_edit": {
+            "type": "boolean",
+            "title": "Can Edit",
+            "default": false
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "version_number",
+          "approved_at",
+          "spec"
+        ],
+        "title": "DashboardDetail"
+      },
+      "DashboardQueryRequest": {
+        "properties": {
           "filters": {
-            "default": [],
             "items": {
-              "$ref": "#/components/schemas/FilterSpec"
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/StringFilterSpec"
+                },
+                {
+                  "$ref": "#/components/schemas/AgentFilterSpec"
+                }
+              ],
+              "discriminator": {
+                "propertyName": "field",
+                "mapping": {
+                  "agent": "#/components/schemas/AgentFilterSpec",
+                  "city": "#/components/schemas/StringFilterSpec",
+                  "property_type": "#/components/schemas/StringFilterSpec",
+                  "state": "#/components/schemas/StringFilterSpec"
+                }
+              }
             },
+            "type": "array",
             "maxItems": 12,
-            "title": "Filters",
-            "type": "array"
+            "title": "Filters"
           },
           "date_range": {
-            "$ref": "#/components/schemas/DateRange"
-          },
-          "sort": {
-            "default": [],
-            "items": {
-              "$ref": "#/components/schemas/SortSpec"
-            },
-            "maxItems": 4,
-            "title": "Sort",
-            "type": "array"
-          },
-          "limit": {
             "anyOf": [
               {
-                "maximum": 1000,
-                "minimum": 1,
-                "type": "integer"
+                "$ref": "#/components/schemas/DateRange"
               },
               {
                 "type": "null"
               }
-            ],
-            "default": null,
-            "title": "Limit"
+            ]
           }
         },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "DashboardQueryRequest"
+      },
+      "DashboardQueryResponse": {
+        "properties": {
+          "dashboard_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Dashboard Id"
+          },
+          "version_number": {
+            "type": "integer",
+            "title": "Version Number"
+          },
+          "scope": {
+            "type": "string",
+            "enum": [
+              "ALL",
+              "CA",
+              "TX"
+            ],
+            "title": "Scope"
+          },
+          "results": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/QueryResult"
+            },
+            "type": "object",
+            "title": "Results"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
         "required": [
-          "schema_version",
-          "catalog_version",
-          "kpis"
+          "dashboard_id",
+          "version_number",
+          "scope",
+          "results"
         ],
-        "title": "AnalysisPlan",
-        "type": "object"
+        "title": "DashboardQueryResponse"
       },
       "DashboardSpec": {
         "additionalProperties": false,
@@ -558,7 +1398,10 @@
             "type": "string"
           },
           "catalog_version": {
-            "const": "1.0.0-import-baseline",
+            "enum": [
+              "1.0.0-import-baseline",
+              "1.1.0-offers-repairs"
+            ],
             "title": "Catalog Version",
             "type": "string"
           },
@@ -585,6 +1428,15 @@
             "minItems": 1,
             "title": "Widgets",
             "type": "array"
+          },
+          "layout": {
+            "items": {
+              "$ref": "#/components/schemas/LayoutItem"
+            },
+            "maxItems": 8,
+            "minItems": 1,
+            "title": "Layout",
+            "type": "array"
           }
         },
         "required": [
@@ -592,10 +1444,42 @@
           "catalog_version",
           "title",
           "queries",
-          "widgets"
+          "widgets",
+          "layout"
         ],
         "title": "DashboardSpec",
         "type": "object"
+      },
+      "DashboardSummary": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "version_number": {
+            "type": "integer",
+            "title": "Version Number"
+          },
+          "approved_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Approved At"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "version_number",
+          "approved_at"
+        ],
+        "title": "DashboardSummary"
       },
       "DateRange": {
         "additionalProperties": false,
@@ -630,58 +1514,141 @@
         "title": "DateRange",
         "type": "object"
       },
-      "FilterSpec": {
+      "DraftChanges": {
         "additionalProperties": false,
         "properties": {
-          "field": {
-            "enum": [
-              "state",
-              "city",
-              "property_type",
-              "agent"
-            ],
-            "title": "Field",
+          "widgets": {
+            "items": {
+              "$ref": "#/components/schemas/WidgetChange"
+            },
+            "title": "Widgets",
+            "type": "array"
+          },
+          "changed_queries": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Changed Queries",
+            "type": "array"
+          },
+          "title_changed": {
+            "default": false,
+            "title": "Title Changed",
+            "type": "boolean"
+          },
+          "presentation_only": {
+            "default": false,
+            "title": "Presentation Only",
+            "type": "boolean"
+          }
+        },
+        "title": "DraftChanges",
+        "type": "object"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "LayoutItem": {
+        "additionalProperties": false,
+        "properties": {
+          "widget_id": {
+            "title": "Widget Id",
             "type": "string"
           },
-          "op": {
-            "enum": [
-              "eq",
-              "in"
-            ],
-            "title": "Op",
-            "type": "string"
+          "x": {
+            "maximum": 11,
+            "minimum": 0,
+            "title": "X",
+            "type": "integer"
           },
-          "value": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "integer"
-              },
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "items": {
-                  "type": "integer"
-                },
-                "type": "array"
-              }
-            ],
-            "title": "Value"
+          "y": {
+            "minimum": 0,
+            "title": "Y",
+            "type": "integer"
+          },
+          "width": {
+            "maximum": 12,
+            "minimum": 1,
+            "title": "Width",
+            "type": "integer"
+          },
+          "height": {
+            "maximum": 12,
+            "minimum": 1,
+            "title": "Height",
+            "type": "integer"
           }
         },
         "required": [
-          "field",
-          "op",
-          "value"
+          "widget_id",
+          "x",
+          "y",
+          "width",
+          "height"
         ],
-        "title": "FilterSpec",
+        "title": "LayoutItem",
         "type": "object"
+      },
+      "LoginRequest": {
+        "properties": {
+          "username": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Username"
+          },
+          "password": {
+            "type": "string",
+            "maxLength": 1024,
+            "minLength": 1,
+            "title": "Password"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "username",
+          "password"
+        ],
+        "title": "LoginRequest"
+      },
+      "MessageRequest": {
+        "properties": {
+          "message": {
+            "type": "string",
+            "maxLength": 12000,
+            "minLength": 1,
+            "title": "Message"
+          },
+          "expected_revision": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expected Revision"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "message"
+        ],
+        "title": "MessageRequest"
       },
       "QueryResult": {
         "additionalProperties": false,
@@ -716,12 +1683,30 @@
             "type": "string"
           },
           "warnings": {
-            "default": [],
             "items": {
               "type": "string"
             },
             "title": "Warnings",
             "type": "array"
+          },
+          "error_code": {
+            "anyOf": [
+              {
+                "enum": [
+                  "timeout",
+                  "row_limit",
+                  "cost_limit",
+                  "database_error",
+                  "configuration_error"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Error Code"
           }
         },
         "required": [
@@ -800,7 +1785,10 @@
                   "sales_value",
                   "transaction_count",
                   "average_sale_value",
-                  "sold_property_count"
+                  "sold_property_count",
+                  "offer_count",
+                  "accepted_offer_rate",
+                  "repair_cost"
                 ],
                 "type": "string"
               },
@@ -834,6 +1822,141 @@
           "field"
         ],
         "title": "SortSpec",
+        "type": "object"
+      },
+      "StringFilterSpec": {
+        "additionalProperties": false,
+        "properties": {
+          "field": {
+            "enum": [
+              "state",
+              "city",
+              "property_type"
+            ],
+            "title": "Field",
+            "type": "string"
+          },
+          "op": {
+            "enum": [
+              "eq",
+              "in"
+            ],
+            "title": "Op",
+            "type": "string"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              }
+            ],
+            "title": "Value"
+          }
+        },
+        "required": [
+          "field",
+          "op",
+          "value"
+        ],
+        "title": "StringFilterSpec",
+        "type": "object"
+      },
+      "UserResponse": {
+        "properties": {
+          "username": {
+            "type": "string",
+            "title": "Username"
+          },
+          "role": {
+            "type": "string",
+            "title": "Role"
+          },
+          "scope_profile": {
+            "type": "string",
+            "title": "Scope Profile"
+          }
+        },
+        "type": "object",
+        "required": [
+          "username",
+          "role",
+          "scope_profile"
+        ],
+        "title": "UserResponse"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      },
+      "WidgetChange": {
+        "additionalProperties": false,
+        "properties": {
+          "widget_id": {
+            "title": "Widget Id",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "change": {
+            "enum": [
+              "added",
+              "removed",
+              "updated"
+            ],
+            "title": "Change",
+            "type": "string"
+          }
+        },
+        "required": [
+          "widget_id",
+          "title",
+          "change"
+        ],
+        "title": "WidgetChange",
         "type": "object"
       },
       "WidgetSpec": {
@@ -872,7 +1995,10 @@
               "sales_value",
               "transaction_count",
               "average_sale_value",
-              "sold_property_count"
+              "sold_property_count",
+              "offer_count",
+              "accepted_offer_rate",
+              "repair_cost"
             ],
             "title": "Kpi",
             "type": "string"
@@ -880,6 +2006,16 @@
           "dimension": {
             "anyOf": [
               {
+                "enum": [
+                  "day",
+                  "month",
+                  "quarter",
+                  "year",
+                  "state",
+                  "city",
+                  "property_type",
+                  "agent"
+                ],
                 "type": "string"
               },
               {
@@ -898,6 +2034,413 @@
           "kpi"
         ],
         "title": "WidgetSpec",
+        "type": "object"
+      },
+      "AddWidget": {
+        "additionalProperties": false,
+        "properties": {
+          "op": {
+            "const": "add_widget",
+            "title": "Op",
+            "type": "string"
+          },
+          "kpi": {
+            "enum": [
+              "sales_value",
+              "transaction_count",
+              "average_sale_value",
+              "sold_property_count",
+              "offer_count",
+              "accepted_offer_rate",
+              "repair_cost"
+            ],
+            "title": "Kpi",
+            "type": "string"
+          },
+          "chart": {
+            "default": "card",
+            "enum": [
+              "card",
+              "line",
+              "bar",
+              "horizontal_bar",
+              "pie",
+              "donut",
+              "table"
+            ],
+            "title": "Chart",
+            "type": "string"
+          },
+          "dimension": {
+            "anyOf": [
+              {
+                "enum": [
+                  "day",
+                  "month",
+                  "quarter",
+                  "year",
+                  "state",
+                  "city",
+                  "property_type",
+                  "agent"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Dimension"
+          }
+        },
+        "required": [
+          "op",
+          "kpi"
+        ],
+        "title": "AddWidget",
+        "type": "object"
+      },
+      "ClearFilters": {
+        "additionalProperties": false,
+        "properties": {
+          "op": {
+            "const": "clear_filters",
+            "title": "Op",
+            "type": "string"
+          }
+        },
+        "required": [
+          "op"
+        ],
+        "title": "ClearFilters",
+        "type": "object"
+      },
+      "PlannerDecision": {
+        "additionalProperties": false,
+        "description": "One provider decision, with semantic exclusivity beyond JSON schema.",
+        "properties": {
+          "outcome": {
+            "enum": [
+              "plan",
+              "clarification",
+              "unsupported"
+            ],
+            "title": "Outcome",
+            "type": "string"
+          },
+          "message": {
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Message",
+            "type": "string"
+          },
+          "dashboard": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DashboardSpec"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "patch": {
+            "anyOf": [
+              {
+                "items": {
+                  "discriminator": {
+                    "mapping": {
+                      "add_widget": "#/components/schemas/AddWidget",
+                      "clear_filters": "#/components/schemas/ClearFilters",
+                      "remove_filter": "#/components/schemas/RemoveFilter",
+                      "remove_widget": "#/components/schemas/RemoveWidget",
+                      "rename_dashboard": "#/components/schemas/RenameDashboard",
+                      "rename_widget": "#/components/schemas/RenameWidget",
+                      "set_chart": "#/components/schemas/SetChart",
+                      "set_dates": "#/components/schemas/SetDates",
+                      "set_filter": "#/components/schemas/SetFilter"
+                    },
+                    "propertyName": "op"
+                  },
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/SetFilter"
+                    },
+                    {
+                      "$ref": "#/components/schemas/RemoveFilter"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ClearFilters"
+                    },
+                    {
+                      "$ref": "#/components/schemas/SetDates"
+                    },
+                    {
+                      "$ref": "#/components/schemas/SetChart"
+                    },
+                    {
+                      "$ref": "#/components/schemas/AddWidget"
+                    },
+                    {
+                      "$ref": "#/components/schemas/RemoveWidget"
+                    },
+                    {
+                      "$ref": "#/components/schemas/RenameWidget"
+                    },
+                    {
+                      "$ref": "#/components/schemas/RenameDashboard"
+                    }
+                  ]
+                },
+                "maxItems": 8,
+                "minItems": 1,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Patch"
+          },
+          "reason_code": {
+            "anyOf": [
+              {
+                "maxLength": 100,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Reason Code"
+          },
+          "reason_codes": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 5,
+            "title": "Reason Codes",
+            "type": "array"
+          }
+        },
+        "required": [
+          "outcome",
+          "message"
+        ],
+        "title": "PlannerDecision",
+        "type": "object"
+      },
+      "RemoveFilter": {
+        "additionalProperties": false,
+        "properties": {
+          "op": {
+            "const": "remove_filter",
+            "title": "Op",
+            "type": "string"
+          },
+          "field": {
+            "enum": [
+              "state",
+              "city",
+              "property_type",
+              "agent"
+            ],
+            "title": "Field",
+            "type": "string"
+          }
+        },
+        "required": [
+          "op",
+          "field"
+        ],
+        "title": "RemoveFilter",
+        "type": "object"
+      },
+      "RemoveWidget": {
+        "additionalProperties": false,
+        "properties": {
+          "op": {
+            "const": "remove_widget",
+            "title": "Op",
+            "type": "string"
+          },
+          "widget_id": {
+            "maxLength": 64,
+            "title": "Widget Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "op",
+          "widget_id"
+        ],
+        "title": "RemoveWidget",
+        "type": "object"
+      },
+      "RenameDashboard": {
+        "additionalProperties": false,
+        "properties": {
+          "op": {
+            "const": "rename_dashboard",
+            "title": "Op",
+            "type": "string"
+          },
+          "title": {
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "op",
+          "title"
+        ],
+        "title": "RenameDashboard",
+        "type": "object"
+      },
+      "RenameWidget": {
+        "additionalProperties": false,
+        "properties": {
+          "op": {
+            "const": "rename_widget",
+            "title": "Op",
+            "type": "string"
+          },
+          "widget_id": {
+            "maxLength": 64,
+            "title": "Widget Id",
+            "type": "string"
+          },
+          "title": {
+            "maxLength": 160,
+            "minLength": 1,
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "op",
+          "widget_id",
+          "title"
+        ],
+        "title": "RenameWidget",
+        "type": "object"
+      },
+      "SetChart": {
+        "additionalProperties": false,
+        "properties": {
+          "op": {
+            "const": "set_chart",
+            "title": "Op",
+            "type": "string"
+          },
+          "widget_id": {
+            "maxLength": 64,
+            "title": "Widget Id",
+            "type": "string"
+          },
+          "chart": {
+            "enum": [
+              "card",
+              "line",
+              "bar",
+              "horizontal_bar",
+              "pie",
+              "donut",
+              "table"
+            ],
+            "title": "Chart",
+            "type": "string"
+          },
+          "dimension": {
+            "anyOf": [
+              {
+                "enum": [
+                  "day",
+                  "month",
+                  "quarter",
+                  "year",
+                  "state",
+                  "city",
+                  "property_type",
+                  "agent"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Dimension"
+          }
+        },
+        "required": [
+          "op",
+          "widget_id",
+          "chart"
+        ],
+        "title": "SetChart",
+        "type": "object"
+      },
+      "SetDates": {
+        "additionalProperties": false,
+        "properties": {
+          "op": {
+            "const": "set_dates",
+            "title": "Op",
+            "type": "string"
+          },
+          "date_range": {
+            "$ref": "#/components/schemas/DateRange"
+          }
+        },
+        "required": [
+          "op",
+          "date_range"
+        ],
+        "title": "SetDates",
+        "type": "object"
+      },
+      "SetFilter": {
+        "additionalProperties": false,
+        "properties": {
+          "op": {
+            "const": "set_filter",
+            "title": "Op",
+            "type": "string"
+          },
+          "filter": {
+            "discriminator": {
+              "mapping": {
+                "agent": "#/components/schemas/AgentFilterSpec",
+                "city": "#/components/schemas/StringFilterSpec",
+                "property_type": "#/components/schemas/StringFilterSpec",
+                "state": "#/components/schemas/StringFilterSpec"
+              },
+              "propertyName": "field"
+            },
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/StringFilterSpec"
+              },
+              {
+                "$ref": "#/components/schemas/AgentFilterSpec"
+              }
+            ],
+            "title": "Filter"
+          }
+        },
+        "required": [
+          "op",
+          "filter"
+        ],
+        "title": "SetFilter",
         "type": "object"
       }
     }
