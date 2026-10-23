@@ -1,0 +1,121 @@
+name: ai-dashboard-agent
+
+services:
+  db:
+    image: postgres:16-bookworm
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: real_estate_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
+    secrets:
+      - postgres_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./data/real-estate-sales-sample-database-v3-sql-postgres.sql:/docker-entrypoint-initdb.d/10_sample_data.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d real_estate_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+    networks: [private]
+
+  backend:
+    build:
+      context: .
+      dockerfile: deploy/backend.Dockerfile
+    restart: unless-stopped
+    env_file:
+      - path: ./deploy/secrets/backend.env
+        required: false
+    depends_on:
+      db: {condition: service_healthy}
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/health', timeout=3)"]
+      interval: 15s
+      timeout: 5s
+      retries: 8
+    networks: [private]
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: ../deploy/frontend.Dockerfile
+    restart: unless-stopped
+    environment:
+      BACKEND_URL: http://backend:8000
+    depends_on:
+      backend: {condition: service_healthy}
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/api/health').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      retries: 8
+    networks: [private]
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    env_file: ./deploy/secrets/site.env
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      frontend: {condition: service_healthy}
+    networks: [private]
+
+  migrate:
+    profiles: [ops]
+    build:
+      context: .
+      dockerfile: deploy/backend.Dockerfile
+    env_file: ./deploy/secrets/operator.env
+    command: ["python", "-m", "alembic", "upgrade", "head"]
+    depends_on:
+      db: {condition: service_healthy}
+    networks: [private]
+
+  provision:
+    profiles: [ops]
+    build:
+      context: .
+      dockerfile: deploy/backend.Dockerfile
+    user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
+    env_file: ./deploy/secrets/operator.env
+    command: ["python", "scripts/provision_production_roles.py"]
+    volumes:
+      - ./deploy/secrets/roles:/app/backend/.runtime
+    depends_on:
+      db: {condition: service_healthy}
+    networks: [private]
+
+  seed:
+    profiles: [ops]
+    build:
+      context: .
+      dockerfile: deploy/backend.Dockerfile
+    env_file:
+      - path: ./deploy/secrets/backend.env
+        required: false
+      - path: ./deploy/secrets/accounts.env
+        required: false
+    command: ["python", "scripts/seed_users.py"]
+    depends_on:
+      db: {condition: service_healthy}
+    networks: [private]
+
+secrets:
+  postgres_password:
+    file: ./deploy/secrets/postgres_password.txt
+
+volumes:
+  postgres_data:
+  caddy_data:
+  caddy_config:
+
+networks:
+  private:

@@ -1,10 +1,23 @@
-# AI Dashboard Agent — local MVP
+# AI Dashboard Agent — Real Estate MVP
+
+Demo đã triển khai trên AWS Lightsail với Docker Compose, PostgreSQL và HTTPS. Xem [hướng dẫn triển khai](docs/vps-deploy.md).
+
+## Trải nghiệm demo
+
+**Website:** https://aidashboardncc.duckdns.org
+
+| Tài khoản Viewer công khai | Giá trị |
+| --- | --- |
+| Username | `viewer` |
+| Password | `hehehehehehe` |
+
+Đăng nhập để xem dashboard bất động sản, biểu đồ và thử các bộ lọc. Đây là tài khoản dùng chung, chỉ có quyền xem dữ liệu mẫu. Tài khoản Builder được giữ riêng. Bản demo đang dùng `LLM_MODE=mock`, không thể hiện chất lượng của model AI thật.
 
 Ứng dụng local gồm Next.js App Router ở cổng 3000 và FastAPI ở cổng 8000. Đã có auth, bảy KPI sales/offers/repairs, compiler SQL allowlist, executor read-only theo scope, dashboard với bộ lọc/ECharts và Builder tạo/chỉnh draft qua hội thoại. Có durable checkpoint, khôi phục sau restart, API/UI duyệt hoặc từ chối và phát hành phiên bản idempotent. Đã kiểm chứng DB chính, bộ test PostgreSQL/browser, benchmark LLM thật và gate chất lượng theo review ngữ nghĩa được duyệt; xem trạng thái bàn giao mới nhất trong [kế hoạch](IMPLEMENTATION_PLAN.md) và [báo cáo nghiệm thu](docs/acceptance-report.md). Health không cần database.
 
 ![Dashboard bất động sản với ba KPI và biểu đồ theo tháng, bang, loại bất động sản](docs/images/dashboard-preview.png)
 
-*Giao diện chạy thật với dữ liệu mẫu tổng hợp, bộ lọc năm 2025. Dự án hiện là MVP local, chưa triển khai web public.*
+*Ảnh từ demo công khai: giao diện vàng nhạt, dữ liệu mẫu tổng hợp và phạm vi ALL. Viewer có thể thử bộ lọc ngày, bang và loại bất động sản.*
 
 ## Yêu cầu
 

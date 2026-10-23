@@ -30,6 +30,7 @@ frontend/playwright-report-live/
 # Runtime output
 *.log
 backend/.runtime/
+deploy/secrets/
 
 # Database backups and local exports
 backups/

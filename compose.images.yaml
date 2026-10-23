@@ -1,0 +1,12 @@
+# Load locally built images onto small VPSs; do not build on the 1 GB host.
+services:
+  backend:
+    image: ai-dashboard-mvp/backend:${DEPLOY_TAG:-20261024}
+  frontend:
+    image: ai-dashboard-mvp/frontend:${FRONTEND_DEPLOY_TAG:-20261024-yellow1}
+  migrate:
+    image: ai-dashboard-mvp/backend:${DEPLOY_TAG:-20261024}
+  provision:
+    image: ai-dashboard-mvp/backend:${DEPLOY_TAG:-20261024}
+  seed:
+    image: ai-dashboard-mvp/backend:${DEPLOY_TAG:-20261024}

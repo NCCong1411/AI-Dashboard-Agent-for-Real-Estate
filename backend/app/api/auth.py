@@ -9,6 +9,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import select
 
 from app.auth.dependencies import CurrentUser, Database, require_trusted_origin
+from app.auth.login_limit import login_limiter
 from app.auth.passwords import verify_password
 from app.auth.sessions import hash_session_token, new_session_token, session_expiry
 from app.config import Settings, get_settings
@@ -55,35 +56,48 @@ def login(
     database: Database,
     settings: Settings = Depends(get_settings),
 ) -> User:
-    user = database.scalar(
-        select(User).where(User.username == payload.username).with_for_update()
-    )
-    valid = verify_password(user.password_hash if user else None, payload.password)
-    if not valid or user is None or not user.is_active:
+    limited = settings.app_env == "production"
+    if limited and not login_limiter.begin(payload.username):
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid username or password",
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="Too many login attempts; retry later",
+            headers={"Retry-After": "300"},
         )
+    successful = False
+    try:
+        user = database.scalar(
+            select(User).where(User.username == payload.username).with_for_update()
+        )
+        valid = verify_password(user.password_hash if user else None, payload.password)
+        if not valid or user is None or not user.is_active:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid username or password",
+            )
 
-    old_token = request.cookies.get(settings.session_cookie_name)
-    if old_token:
-        old_session = database.scalar(
-            select(Session).where(Session.token_hash == hash_session_token(old_token))
-        )
-        if old_session is not None and old_session.revoked_at is None:
-            old_session.revoked_at = datetime.now(UTC)
+        old_token = request.cookies.get(settings.session_cookie_name)
+        if old_token:
+            old_session = database.scalar(
+                select(Session).where(Session.token_hash == hash_session_token(old_token))
+            )
+            if old_session is not None and old_session.revoked_at is None:
+                old_session.revoked_at = datetime.now(UTC)
 
-    token = new_session_token()
-    database.add(
-        Session(
-            user_id=user.id,
-            token_hash=hash_session_token(token),
-            expires_at=session_expiry(settings.session_ttl_seconds),
+        token = new_session_token()
+        database.add(
+            Session(
+                user_id=user.id,
+                token_hash=hash_session_token(token),
+                expires_at=session_expiry(settings.session_ttl_seconds),
+            )
         )
-    )
-    database.commit()
-    _set_session_cookie(response, token, settings)
-    return user
+        database.commit()
+        successful = True
+        _set_session_cookie(response, token, settings)
+        return user
+    finally:
+        if limited:
+            login_limiter.end(payload.username, successful=successful)
 
 
 @router.post(

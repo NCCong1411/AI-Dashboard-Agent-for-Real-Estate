@@ -24,7 +24,7 @@ export function ChartWidget({widget, result}: {widget: WidgetSpec; result: Query
     try {
       chart.setOption({
         animation: false,
-        color: ["#1f7650", "#84aa8b", "#d3a353", "#647d99", "#b86d4d", "#8e7c9c", "#718b72"],
+        color: ["#b58624", "#e6bf58", "#9e8240", "#647d99", "#c28354", "#98806f", "#8b9564"],
         aria: {enabled: true},
         tooltip: {trigger: pie ? "item" : "axis", renderMode: "richText", confine: true,
           ...(ratio ? {valueFormatter: (value: unknown) => Number(value).toLocaleString("vi-VN", {maximumFractionDigits: 2}) + "%"} : {})},

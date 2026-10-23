@@ -1,11 +1,13 @@
 :root {
   color-scheme: light;
-  --ink: #17211b;
-  --muted: #5f6d65;
-  --paper: #f5f2e9;
-  --panel: rgba(255, 255, 255, 0.78);
-  --line: rgba(23, 33, 27, 0.14);
-  --green: #1f7650;
+  --ink: #302a1e;
+  --muted: #71634b;
+  --paper: #fff9e6;
+  --panel: rgba(255, 253, 245, 0.9);
+  --line: rgba(48, 42, 30, 0.16);
+  --accent: #f4d675;
+  --accent-text: #775600;
+  --success: #2d6044;
   --red: #b44335;
 }
 
@@ -21,9 +23,8 @@ body {
 body {
   margin: 0;
   color: var(--ink);
-  background:
-    radial-gradient(circle at 15% 15%, rgba(31, 118, 80, 0.12), transparent 34rem),
-    linear-gradient(135deg, var(--paper), #ebe6d8);
+  background: var(--paper);
+  background-image: radial-gradient(circle at 15% 15%, rgba(244, 214, 117, 0.2), transparent 34rem);
   font-family: Arial, Helvetica, sans-serif;
 }
 
@@ -40,13 +41,13 @@ main {
   border: 1px solid var(--line);
   border-radius: 2rem;
   background: var(--panel);
-  box-shadow: 0 2rem 6rem rgba(45, 55, 48, 0.12);
+  box-shadow: 0 2rem 6rem rgba(87, 67, 20, 0.1);
   backdrop-filter: blur(18px);
 }
 
 .eyebrow {
   margin: 0 0 1rem;
-  color: var(--green);
+  color: var(--accent-text);
   font-size: 0.75rem;
   font-weight: 700;
   letter-spacing: 0.14em;
@@ -90,8 +91,8 @@ h1 {
 }
 
 .statusDot.healthy {
-  background: var(--green);
-  box-shadow: 0 0 0 0.25rem rgba(31, 118, 80, 0.14);
+  background: var(--success);
+  box-shadow: 0 0 0 0.25rem rgba(45, 96, 68, 0.14);
 }
 
 .statusDot.failed {
@@ -130,8 +131,8 @@ h1 {
   padding: 0.85rem 1rem;
   border: 0;
   border-radius: 0.65rem;
-  background: var(--green);
-  color: white;
+  background: var(--accent);
+  color: var(--ink);
   font: inherit;
   font-weight: 700;
   cursor: pointer;
@@ -189,21 +190,21 @@ h1 {
 .dashboardHeader .eyebrow { margin-bottom: 0.7rem; }
 .dashboardHeader .userState { margin: 0; flex-wrap: wrap; }
 .dashboardHint, .dashboardContext { color: var(--muted); font-size: 0.9rem; line-height: 1.6; }
-.backLink { color: var(--green); text-decoration: none; font-size: 0.9rem; }
-.versionBadge { background: #e6eee6; color: #28603f; border-radius: 2rem; padding: 0.6rem 1rem; font-size: 0.8rem; white-space: nowrap; }
+.backLink { color: var(--accent-text); text-decoration: none; font-size: 0.9rem; }
+.versionBadge { background: #fff0b8; color: var(--accent-text); border-radius: 2rem; padding: 0.6rem 1rem; font-size: 0.8rem; white-space: nowrap; }
 .dashboardList { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: 1.5rem; margin-top: 2rem; }
 .dashboardLink { background: var(--panel); border: 1px solid var(--line); border-radius: 1rem; padding: 1.75rem; text-decoration: none; color: inherit; }
-.dashboardLink:hover { border-color: var(--green); }
+.dashboardLink:hover { border-color: var(--accent-text); }
 .dashboardLink h2 { font: 500 1.7rem/1.25 Georgia, serif; margin-top: 0; }
 .dashboardLink p { color: var(--muted); font-size: 0.85rem; }
-.dashboardLink span { display: inline-block; margin-top: 1.5rem; color: var(--green); }
+.dashboardLink span { display: inline-block; margin-top: 1.5rem; color: var(--accent-text); }
 .dashboardFilters { display: flex; flex-wrap: wrap; align-items: end; gap: 1rem; padding: 1.25rem; background: #fff9; border: 1px solid var(--line); border-radius: 1rem; }
 .dashboardFilters label { display: grid; flex: 1 1 150px; gap: 0.5rem; font-size: 0.8rem; color: var(--muted); font-weight: 600; }
 .dashboardFilters input { min-width: 0; width: 100%; border: 1px solid var(--line); padding: 0.7rem; border-radius: 0.5rem; font: inherit; color: var(--ink); background: #fff; }
-.dashboardFilters button, .dashboardContext button { border: 0; border-radius: 0.5rem; padding: 0.75rem 1rem; background: var(--green); color: white; font: inherit; cursor: pointer; }
+.dashboardFilters button, .dashboardContext button { border: 0; border-radius: 0.5rem; padding: 0.75rem 1rem; background: var(--accent); color: var(--ink); font: inherit; cursor: pointer; }
 button:disabled { opacity: 0.6; cursor: wait; }
 .dashboardContext { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; margin: 1rem 0; }
-.dashboardContext button { background: transparent; color: var(--green); border: 1px solid var(--line); font-size: 0.85rem; }
+.dashboardContext button { background: transparent; color: var(--accent-text); border: 1px solid var(--line); font-size: 0.85rem; }
 .dashboardGrid { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); grid-auto-rows: minmax(55px, auto); gap: 1.25rem; }
 .dashboardWidget { grid-column: var(--column) / span var(--span); grid-row: var(--row) / span var(--height); min-width: 0; padding: 1.25rem; background: var(--panel); border: 1px solid var(--line); border-radius: 1rem; }
 .dashboardWidget h2 { font-size: 0.95rem; line-height: 1.5; margin: 0 0 0.75rem; overflow-wrap: anywhere; }
@@ -218,37 +219,38 @@ table { border-collapse: collapse; width: 100%; font-size: 0.8rem; text-align: l
 th, td { padding: 0.7rem; border-bottom: 1px solid var(--line); white-space: nowrap; }
 .sqlPanel { margin-top: 2rem; border-top: 1px solid var(--line); padding: 1rem 0; font-size: 0.85rem; }
 .sqlPanel pre { overflow: auto; background: #fff9; border: 1px solid var(--line); padding: 1rem; border-radius: 0.7rem; }
-.builderLink { display: inline-block; padding: 0.8rem 1rem; background: var(--green); border-radius: 0.6rem; color: white; text-decoration: none; font-size: 0.9rem; }
+.builderLink { display: inline-block; padding: 0.8rem 1rem; background: var(--accent); border-radius: 0.6rem; color: var(--ink); text-decoration: none; font-size: 0.9rem; }
 .builderShell { max-width: 1680px; margin: 0 auto; }
 .builderWorkspace { display: grid; grid-template-columns: minmax(270px, 340px) minmax(0, 1fr); gap: 1.5rem; margin: 1.5rem 0; align-items: start; }
 .chatPanel { background: var(--panel); border: 1px solid var(--line); border-radius: 1rem; padding: 1.25rem; }
 .chatPanel h2, .previewHeading h2 { font-size: 1.1rem; margin: 0 0 1rem; }
 .chatMessages { max-height: 460px; overflow: auto; padding-right: 0.3rem; }
-.chatMessage { border-radius: 0.7rem; padding: 0.9rem; margin-bottom: 0.8rem; background: #eaf0e8; font-size: 0.9rem; line-height: 1.65; overflow-wrap: anywhere; }
-.chatMessage.user { background: #f2ecdf; }
+.chatMessage { border-radius: 0.7rem; padding: 0.9rem; margin-bottom: 0.8rem; background: #fff3c9; font-size: 0.9rem; line-height: 1.65; overflow-wrap: anywhere; }
+.chatMessage.user { background: #f5e9c5; }
 .chatMessage p { margin: 0; white-space: pre-wrap; }
 .chatMessage .messageRole { margin-bottom: 0.4rem; color: var(--muted); font-size: 0.75rem; font-weight: 700; }
 .chatForm { display: grid; gap: 0.7rem; margin-top: 1rem; }
 .chatForm label { font-size: 0.85rem; font-weight: 600; }
-.chatForm textarea { width: 100%; resize: vertical; border: 1px solid var(--line); border-radius: 0.6rem; background: white; padding: 0.8rem; font: inherit; line-height: 1.5; }
-.chatForm button { border: 0; border-radius: 0.6rem; background: var(--green); color: white; padding: 0.85rem; font: inherit; cursor: pointer; }
+.chatForm textarea { width: 100%; resize: vertical; border: 1px solid var(--line); border-radius: 0.6rem; background: white; color: var(--ink); padding: 0.8rem; font: inherit; line-height: 1.5; }
+.chatForm button { border: 0; border-radius: 0.6rem; background: var(--accent); color: var(--ink); padding: 0.85rem; font: inherit; cursor: pointer; }
 .previewPanel { min-width: 0; }
 .builderPreview { min-width: 0; }
 .approvalPanel { border: 1px solid var(--line); background: var(--paper); padding: 1rem; border-radius: 0.8rem; margin-bottom: 1.25rem; }
 .approvalPanel h2 { margin: 0 0 0.5rem; font-size: 1.1rem; }
 .approvalPanel p { font-size: 0.9rem; line-height: 1.6; }
 .approvalActions { display: flex; flex-wrap: wrap; gap: 0.75rem; }
-.approvalPanel button { border: 1px solid var(--green); border-radius: 0.6rem; background: var(--green); color: white; padding: 0.75rem 1rem; font: inherit; cursor: pointer; }
-.approvalPanel .secondaryAction { background: transparent; color: var(--green); }
+.approvalPanel button { border: 1px solid var(--accent-text); border-radius: 0.6rem; background: var(--accent); color: var(--ink); padding: 0.75rem 1rem; font: inherit; cursor: pointer; }
+.approvalPanel .secondaryAction { background: transparent; color: var(--accent-text); }
 .previewHeading { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
 .previewHeading h2 { margin-bottom: 0; }
 .previewEmpty { min-height: 300px; border: 1px dashed var(--line); border-radius: 1rem; display: grid; align-content: center; text-align: center; padding: 2rem; }
-.previewNotice, .modeNotice { border: 1px solid #b7cbb6; border-radius: 0.65rem; padding: 0.9rem 1rem; color: #2d6044; background: #eef3e9; font-size: 0.85rem; line-height: 1.6; }
+.previewNotice, .modeNotice { border: 1px solid #d9bd64; border-radius: 0.65rem; padding: 0.9rem 1rem; color: var(--accent-text); background: #fff3c9; font-size: 0.85rem; line-height: 1.6; }
 .previewPanel .kpiValue { font-size: clamp(1.2rem, 2vw, 2rem); }
 .previewPanel .chartCanvas { height: 260px; }
 .draftChanges { margin: 1rem 0; padding: 0.8rem 1rem; background: #fff8; border: 1px solid var(--line); border-radius: 0.65rem; font-size: 0.85rem; }
 .draftChanges h3 { margin: 0 0 0.6rem; font-size: 0.9rem; }
 .draftChanges ul { margin: 0; padding-left: 1.2rem; line-height: 1.7; }
+:where(a, button, input, textarea, select, summary):focus-visible { outline: 3px solid var(--accent-text); outline-offset: 3px; }
 @media (min-width: 901px) and (max-width: 1250px) {
   .previewPanel .dashboardGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-rows: auto; }
   .previewPanel .dashboardWidget { grid-column: auto; grid-row: auto; }
