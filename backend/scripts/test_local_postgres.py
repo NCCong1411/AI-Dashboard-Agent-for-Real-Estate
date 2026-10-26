@@ -169,6 +169,10 @@ def run_browser_gates(
                BACKEND_URL=f"http://127.0.0.1:{backend_port}",
                PLAYWRIGHT_BASE_URL=f"http://127.0.0.1:{frontend_port}",
                LLM_MODE=llm_mode)
+    if live_smoke:
+        # The paid acceptance journey proves one-call behavior without changing
+        # retry settings for the preceding deterministic budget regression.
+        env["LLM_MAX_CALLS_PER_RUN"] = "1"
     password = secrets.token_hex(24)
     if existing_accounts is None:
         for variable in ("SEED_BUILDER_ALL_PASSWORD", "SEED_VIEWER_ALL_PASSWORD", "SEED_VIEWER_CA_PASSWORD", "SEED_BUILDER_TX_PASSWORD"):
@@ -470,9 +474,27 @@ def main() -> int:
         if args.live_benchmark:
             return run_browser_gates(work, env, e2e=False, benchmark=True, llm_mode="live")
         if args.live_smoke:
-            return run_browser_gates(
+            live_result = run_browser_gates(
                 work, env, e2e=False, benchmark=False, llm_mode="live", live_smoke=True
             )
+            # This connection is pinned to the disposable cluster created above.
+            # Export only accounting metadata, never credentials or source rows.
+            with psycopg.connect(host="127.0.0.1", port=port, dbname="dashboard_test", user="test_runtime",
+                                 password=passwords["test_runtime"]) as connection:
+                connection.execute("SET TRANSACTION READ ONLY")
+                rows = connection.execute("""
+                    SELECT r.run_id, c.model, c.status, r.llm_calls, r.query_count,
+                           c.actual_input_tokens, c.actual_output_tokens, c.charged_cost_usd, c.error_code
+                    FROM app.usage_calls c JOIN app.usage_records r ON r.run_id = c.run_id
+                    WHERE c.mode = 'live' ORDER BY c.created_at
+                """).fetchall()
+            names = ("run_id", "model", "status", "llm_calls", "query_count", "input_tokens",
+                     "output_tokens", "estimated_cost_usd", "error_code")
+            report = {"calls": [dict(zip(names, row, strict=True)) for row in rows],
+                      "estimated_cost_usd": sum((row[7] for row in rows), Decimal(0))}
+            (work / "live-smoke-usage.json").write_text(json.dumps(report, default=str, indent=2), encoding="utf-8")
+            print(f"Live usage: {len(rows)} calls; estimated USD {report['estimated_cost_usd']}", flush=True)
+            return live_result
         return run_browser_gates(
             work, env, e2e=args.e2e, benchmark=args.benchmark, llm_mode="mock"
         ) if args.e2e or args.benchmark else 0

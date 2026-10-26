@@ -36,7 +36,9 @@ def test_ambiguous_comparison_guidance_checks_all_missing_fields():
 
 
 def test_overview_guidance_distinguishes_title_from_explicit_widget_limit():
-    assert "Dashboard sales theo month/state/property_type" in SYSTEM_PROMPT
+    assert "Dashboard sales: luôn có 3 card" in SYSTEM_PROMPT
+    assert "Chỉ tạo chart cho các chiều được yêu cầu" in SYSTEM_PROMPT
+    assert "Tổng quan không nêu chiều mới dùng month/state/property_type" in SYSTEM_PROMPT
     assert "sales_value/transaction_count/average_sale_value" in SYSTEM_PROMPT
     assert '"giá trị giao dịch"' in SYSTEM_PROMPT
     assert 'Chỉ bỏ card khi yêu cầu rõ "chỉ"' in SYSTEM_PROMPT

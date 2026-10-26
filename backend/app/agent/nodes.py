@@ -48,6 +48,8 @@ class AgentNodes:
         except UsageLimitError as error:
             return failure(error.code, "Lượt chạy không còn ngân sách, token hoặc thời gian cho phép.")
         if call.decision is None:
+            if call.error_code in {"provider_authentication_failed", "provider_permission_denied"}:
+                return failure(call.error_code, "API key không hợp lệ hoặc không có quyền truy cập model. Kiểm tra cấu hình LLM trên backend; không gửi key trong hội thoại.")
             return failure(call.error_code or "provider_error", "Không thể tạo kế hoạch. Vui lòng thử lại.", retryable=call.retryable)
         return {"decision": call.decision.model_dump(mode="json")}
 

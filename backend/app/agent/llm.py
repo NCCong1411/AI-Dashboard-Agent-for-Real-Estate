@@ -49,7 +49,8 @@ def strict_output_schema(*, editing: bool = False) -> dict:
         if not isinstance(value, dict):
             return value
         result = {key: convert(item) for key, item in value.items()
-                  if key not in {"default", "discriminator"}}
+                  if key not in {"default", "discriminator"}
+                  and not (key == "title" and isinstance(item, str))}
         if "oneOf" in result:
             result["anyOf"] = result.pop("oneOf")
         if result.get("type") == "object":
@@ -126,7 +127,8 @@ class OpenAIPlanner:
         except (APITimeoutError, TimeoutError):
             return AdapterCall(None, None, None, "provider_timeout", True)
         except APIStatusError as error:
-            code = "provider_rate_limit" if error.status_code == 429 else "provider_error"
+            code = {401: "provider_authentication_failed", 403: "provider_permission_denied",
+                    429: "provider_rate_limit"}.get(error.status_code, "provider_error")
             return AdapterCall(None, None, None, code, error.status_code == 429 or error.status_code >= 500)
         except APIConnectionError:
             return AdapterCall(None, None, None, "provider_unavailable", True)

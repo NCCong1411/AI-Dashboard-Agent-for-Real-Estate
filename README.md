@@ -171,6 +171,8 @@ Executor mặc định `statement_timeout=5000ms`, tối đa 1.000 dòng và pla
 
 ## Adapter, ngân sách và hội thoại
 
+Hướng dẫn bật `gpt-6-luna` local và chạy chuỗi kiểm thử catalog/chỉnh sửa bằng API thật: [Live MVP](docs/live-mvp.md). Không bật live trên demo công khai trong quy trình này.
+
 `LLM_MODE=mock` không cần key và dùng tập quy tắc deterministic phục vụ phát triển. `LLM_MODE=live` yêu cầu toàn bộ cấu hình provider/HTTPS endpoint/model/key/pricing trong `.env.example`; chưa có model hoặc giá mặc định. Không coi mock là bằng chứng chất lượng LLM thật.
 
 Adapter OpenAI dùng Responses structured output, không tự retry, không gửi raw dataset/query results. `UsageService` giữ chỗ chi phí/token trong `app.usage_calls` trước mỗi call, dùng khóa Builder cho hạn mức ngày và đối soát idempotent sau call. Timeout/usage thiếu giữ nguyên phần dự trù. Mặc định 3 calls, 24.000 token, 60 giây/run, 0,10 USD/run và 1 USD/ngày theo giờ Việt Nam. Giá phải bao phủ rate cao nhất áp dụng (cache-write/tier/region nếu có), là ước tính chứ không phải hóa đơn.

@@ -55,7 +55,7 @@ KPI_CATALOG: dict[KPIId, KPI] = {
         "COUNT(DISTINCT property_id)", ("property_id",), SALES_DIMENSIONS,
     ),
     "offer_count": KPI(
-        "offer_count", "Số đề nghị", "Số đề nghị theo ngày đề nghị", "offer",
+        "offer_count", "Số đề nghị", "Đếm mỗi đề nghị mua bất động sản theo offer_date, mọi trạng thái", "offer",
         "offer", "offer_date", "analytics.offers", "COUNT(offer_id)",
         ("offer_id",), SALES_DIMENSIONS[:-1],
     ),

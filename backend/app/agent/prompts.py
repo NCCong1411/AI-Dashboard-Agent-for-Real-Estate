@@ -23,10 +23,12 @@ offers/repairs không hỗ trợ dimension hoặc filter agent. accepted_offer_r
 COUNT accepted / COUNT tất cả đề nghị theo offer_date, tỷ lệ 0–1; repair_cost theo
 repair_date. Dashboard nhiều fact phải chia query, không ghép fact để tính tiền.
 table có thể nhiều dimension. Chia query theo dimension, dùng lại query cho card.
-Dashboard sales theo month/state/property_type: luôn có 3 card
-sales_value/transaction_count/average_sale_value và 3 chart, kể cả khi tiêu đề
+Dashboard sales: luôn có 3 card sales_value/transaction_count/average_sale_value,
+kể cả khi tiêu đề
 là "giá trị giao dịch". Chỉ bỏ card khi yêu cầu rõ "chỉ" một KPI/chart,
 giới hạn widget hoặc "không card"; yêu cầu một chart riêng thì chỉ tạo chart đó.
+Chỉ tạo chart cho các chiều được yêu cầu; không tự thêm month/property_type khi
+chỉ yêu cầu theo state. Tổng quan không nêu chiều mới dùng month/state/property_type.
 Chart chỉ nêu chiều mà thiếu đại lượng thì hỏi KPI;
 "khu vực" cần làm rõ bang hay thành phố.
 "Bảng" dùng table; so sánh theo nhóm dùng bar nếu không nêu chart. Bar mặc định
@@ -62,6 +64,12 @@ hồng theo đại lý thành clarification cho KPI giao dịch khác.
 Giải thích cụ thể dữ liệu/công thức còn thiếu; không dùng một từ chối chung chung.
 Nếu current_dashboard có giá trị, chỉ trả patch với các thao tác được schema cho phép,
 dashboard phải null. Thao tác chỉ đổi trường được yêu cầu; không tái tạo widget/ID khác.
+Trong ngữ cảnh đã có sales_value, 'doanh số' có thể tham chiếu chart sales_value;
+nếu chỉ có một chart đó thì chỉnh đúng ID, nếu nhiều chart mà không rõ chiều thì hỏi lại.
+Thêm một KPI không nêu chiều dùng card. Chọn dataset qua KPI catalog; thêm offers/repairs
+phải là query riêng, kế thừa kỳ/bộ lọc hiện tại nếu tương thích, giữ mọi widget không liên quan.
+current_dashboard đã lược layout và version lặp lại; global schema_version/catalog_version
+áp dụng cho các query. Không suy diễn rằng phần bị lược đã bị xóa khỏi bản nháp.
 set_filter/set_dates áp dụng cho toàn bộ dashboard; clear_filters chỉ bỏ filter, không
 đổi quyền. Nếu tham chiếu 'biểu đồ này' không đủ ngữ cảnh, hỏi lại để xác định widget.
 Nếu current_dashboard là null, trả dashboard mới đầy đủ và patch=null.
@@ -76,20 +84,28 @@ def planner_input(prompt: str, current: DashboardSpec | None = None, *, now: dat
     value = {
         "schema_version": SCHEMA_VERSION, "catalog_version": CATALOG_VERSION,
         "timezone": "Asia/Ho_Chi_Minh", "current_date": moment.astimezone(ZoneInfo("Asia/Ho_Chi_Minh")).date().isoformat(),
-        "catalog": [{"id": item.id, "label": item.label_vi, "unit": item.unit,
-                     "grain": item.grain, "date_field": item.date_field, "dimensions": item.dimensions}
+        "catalog": [{"id": item.id, "label": item.label_vi, "definition": item.description_vi,
+                     "dataset": item.view.rsplit(".", 1)[-1], "unit": item.unit}
                     for item in KPI_CATALOG.values()],
+        "datasets": {item.view.rsplit(".", 1)[-1]: {
+            "date_field": item.date_field, "dimensions": item.dimensions,
+        } for item in KPI_CATALOG.values()},
         "allowed_filters": ["state", "city", "property_type", "agent"],
         "state_filter_values": {"format": "USPS two-letter uppercase", "name_to_code": US_STATE_CODES},
-        "current_dashboard": current.model_dump(mode="json") if current else None,
+        "current_dashboard": current.model_dump(mode="json", exclude={
+            "layout": True, "schema_version": True, "catalog_version": True,
+            "queries": {"__all__": {"plan": {"schema_version", "catalog_version"}}},
+        }) if current else None,
         "user_request": prompt,
     }
     remaining, bounded = 1700, []
     for message in reversed((history or [])[-8:]):
         if message.get("role") not in {"user", "assistant"} or remaining <= 0:
             continue
-        content = str(message.get("content", ""))[:min(500, remaining)]
+        # Bound UTF-8 bytes, not characters: Vietnamese history must fit the
+        # same conservative reservation as ASCII without inflating the budget.
+        content = str(message.get("content", ""))[:500].encode("utf-8")[:remaining].decode("utf-8", errors="ignore")
         bounded.append({"role": message["role"], "content": content})
-        remaining -= len(content)
+        remaining -= len(content.encode("utf-8"))
     value["recent_messages"] = list(reversed(bounded))
     return json.dumps(value, ensure_ascii=False, separators=(",", ":"))

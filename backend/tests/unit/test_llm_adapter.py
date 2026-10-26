@@ -3,6 +3,7 @@
 import asyncio
 from datetime import UTC, datetime
 import json
+from uuid import uuid4
 
 import httpx2
 import pytest
@@ -12,6 +13,7 @@ from pydantic import ValidationError
 from app.agent import llm as module
 from app.agent.llm import AdapterConfigurationError, OpenAIPlanner, create_planner, strict_output_schema
 from app.agent.mock import MockPlanner
+from app.agent.nodes import AgentNodes
 from app.agent.prompts import SYSTEM_PROMPT, planner_input
 from app.config import Settings
 from app.schemas.agent import PlannerDecision
@@ -78,7 +80,8 @@ def test_edit_uses_smaller_output_reservation(monkeypatch):
     assert calls[0]["max_output_tokens"] == 4096
 
 
-@pytest.mark.parametrize("status,code,retryable", [(429, "provider_rate_limit", True), (500, "provider_error", True), (401, "provider_error", False)])
+@pytest.mark.parametrize("status,code,retryable", [(429, "provider_rate_limit", True), (500, "provider_error", True),
+    (401, "provider_authentication_failed", False), (403, "provider_permission_denied", False)])
 def test_http_errors_are_sanitized_and_not_automatically_retried(monkeypatch, caplog, status, code, retryable):
     requests = []
     def handle(request):
@@ -153,7 +156,8 @@ def test_mock_has_no_key_or_network_and_outcomes_are_deterministic(monkeypatch):
 def test_strict_schema_and_local_semantic_exclusivity():
     def check(value):
         if isinstance(value, dict):
-            assert "oneOf" not in value and "discriminator" not in value and "default" not in value
+            assert not {"oneOf", "discriminator", "default"} & value.keys()
+            assert not isinstance(value.get("title"), str)
             if value.get("type") == "object":
                 assert value["additionalProperties"] is False
                 assert set(value["required"]) == set(value.get("properties", {}))
@@ -163,6 +167,8 @@ def test_strict_schema_and_local_semantic_exclusivity():
             for item in value:
                 check(item)
     check(strict_output_schema())
+    assert "title" in strict_output_schema()["$defs"]["DashboardSpec"]["properties"]
+    assert "title" in strict_output_schema(editing=True)["$defs"]["RenameWidget"]["properties"]
     with pytest.raises(ValidationError):
         PlannerDecision(outcome="unsupported", message="no", reason_code="x", dashboard=demo_spec())
     with pytest.raises(ValidationError):
@@ -173,5 +179,38 @@ def test_prompt_uses_request_clock_and_only_catalog_metadata():
     context = json.loads(planner_input("yesterday", now=datetime(2026, 10, 15, 18, tzinfo=UTC)))
     assert context["current_date"] == "2026-10-16" and context["timezone"] == "Asia/Ho_Chi_Minh"
     assert all("sql_expression" not in kpi for kpi in context["catalog"])
+    assert {item["dataset"] for item in context["catalog"]} == {"sales", "offers", "repairs"}
+    assert all(item["definition"] for item in context["catalog"])
+    assert context["datasets"]["offers"]["date_field"] == "offer_date"
+    assert "agent" not in context["datasets"]["offers"]["dimensions"]
+    offer = next(item for item in context["catalog"] if item["id"] == "offer_count")
+    assert "đề nghị mua bất động sản" in offer["definition"]
     with pytest.raises(ValueError, match="timezone-aware"):
         planner_input("test", now=datetime(2026, 1, 1))
+
+
+def test_edit_context_is_compact_but_keeps_query_meaning_and_widget_ids():
+    current = demo_spec()
+    before = current.model_dump(mode="json")
+    compact = json.loads(planner_input("Đổi biểu đồ", current))["current_dashboard"]
+    assert "layout" not in compact and "schema_version" not in compact
+    assert compact["widgets"] == before["widgets"]
+    for original, reduced in zip(before["queries"], compact["queries"], strict=True):
+        assert reduced["id"] == original["id"]
+        assert reduced["plan"] == {key: value for key, value in original["plan"].items()
+                                   if key not in {"schema_version", "catalog_version"}}
+    assert len(json.dumps(compact)) < len(json.dumps(before)) * 0.8
+    assert current.model_dump(mode="json") == before
+
+
+@pytest.mark.parametrize("code", ["provider_authentication_failed", "provider_permission_denied"])
+def test_provider_credentials_failure_explains_configuration_without_a_draft(code):
+    class UsageStub:
+        async def generate(self, *args, **kwargs):
+            return module.AdapterCall(None, None, None, code)
+    nodes = AgentNodes(Settings(_env_file=None, app_env="test"), UsageStub(), None, planner=MockPlanner())
+    result = asyncio.run(nodes.plan({"prompt": "Tạo dashboard", "user_id": str(uuid4()), "run_id": str(uuid4())}))
+    response = result["response"]
+    assert response["error"]["code"] == code and response["error"]["retryable"] is False
+    assert "API key" in response["message"] and response["draft"] is None
+    assert response["results"] == {} and response["sql"] == {}

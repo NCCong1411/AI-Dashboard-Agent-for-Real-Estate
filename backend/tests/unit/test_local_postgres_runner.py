@@ -28,6 +28,7 @@ def test_existing_demo_accounts_are_never_reseeded(monkeypatch, tmp_path):
                                  live_smoke=True, existing_accounts=accounts)
     assert commands == []
     assert started[0]["E2E_BUILDER_ALL_PASSWORD"] == accounts["builder_all"]
+    assert started[0]["LLM_MAX_CALLS_PER_RUN"] == "1"
     assert "E2E_DEMO_PASSWORD" not in started[0]
     assert not any(name.startswith("SEED_") for name in started[0])
 

@@ -1,10 +1,12 @@
 from datetime import UTC, datetime
+import asyncio
 import json
 
 from pydantic import TypeAdapter, ValidationError
 import pytest
 
 from app.agent.llm import strict_output_schema
+from app.agent.mock import MockPlanner
 from app.agent.prompts import planner_input
 from app.schemas.edits import EditOperation
 from app.services.edits import apply_edits, changes_between, query_fingerprint
@@ -65,3 +67,31 @@ def test_edit_schema_is_small_and_history_is_bounded_by_the_prompt_builder():
     assert sum(len(item["content"]) for item in context["recent_messages"]) <= 2000
     assert len(context["recent_messages"]) <= 8
     assert input_token_bound("Đổi chart", demo_spec(), now, history) + 4096 <= 24000
+    vietnamese = [{"role": "user", "content": "Thêm giá trị giao dịch theo bang. " * 1000}] * 100
+    context = json.loads(planner_input("Đổi chart", demo_spec(), now=now, history=vietnamese))
+    assert sum(len(item["content"].encode("utf-8")) for item in context["recent_messages"]) <= 1700
+    assert input_token_bound("Đổi chart", demo_spec(), now, vietnamese) + 4096 <= 24000
+
+
+def test_sales_alias_needs_a_unique_chart_and_does_not_replace_other_widgets():
+    original = demo_spec()
+    ambiguous = asyncio.run(MockPlanner().generate("Đổi biểu đồ doanh số thành cột ngang", original)).decision
+    assert ambiguous.outcome == "clarification"
+    single = apply_edits(original, operations(
+        {"op": "remove_widget", "widget_id": "monthly-sales"},
+        {"op": "remove_widget", "widget_id": "type-sales"},
+    ))
+    decision = asyncio.run(MockPlanner().generate("Đổi biểu đồ doanh số thành cột ngang", single)).decision
+    updated = apply_edits(single, decision.patch)
+    assert updated.queries == single.queries and updated.layout == single.layout
+    assert [item for item in updated.widgets if item.id != "state-sales"] == [
+        item for item in single.widgets if item.id != "state-sales"]
+    assert next(item for item in updated.widgets if item.id == "state-sales").chart == "horizontal_bar"
+
+
+def test_missing_website_source_does_not_invent_metrics_or_change_current_draft():
+    original = demo_spec()
+    result = asyncio.run(MockPlanner().generate("Thêm số lượt khách xem tin bất động sản trên website", original)).decision
+    assert result.outcome == "unsupported" and result.dashboard is None and result.patch is None
+    assert "nguồn dữ liệu lượt xem" in result.message
+    assert original == demo_spec()

@@ -63,6 +63,8 @@ def edit_decision(prompt: str, current: DashboardSpec) -> PlannerDecision:
                           if any(phrase in text for phrase in phrases)), None)
         explicit = [widget for widget in current.widgets if widget.id.casefold() in text]
         candidates = explicit or [widget for widget in current.widgets if dimension and widget.dimension == dimension]
+        if not candidates and any(term in text for term in ("doanh so", "gia tri giao dich")):
+            candidates = [widget for widget in current.widgets if widget.chart != "card" and widget.kpi == "sales_value"]
         if not candidates and "so giao dich" in text:
             candidates = [widget for widget in current.widgets if widget.chart == "card" and widget.kpi == "transaction_count"]
         if renaming and "dashboard" in text:
@@ -148,10 +150,12 @@ class MockPlanner:
             result = PlannerDecision.model_validate(self.decision.model_dump(mode="python"))
             return AdapterCall(result, 0, 0)
         text = normalize(prompt)
-        forbidden = ("drop table", "select ", "bo qua phan quyen", "doi scope", "loi nhuan", "hoa hong", "du bao", "dai ly", "neighbourhood")
+        forbidden = ("drop table", "select ", "bo qua phan quyen", "doi scope", "loi nhuan", "hoa hong", "du bao", "dai ly", "neighbourhood", "luot khach xem", "luot xem")
         if any(term in text for term in forbidden):
             decision = PlannerDecision(outcome="unsupported", reason_code="outside_catalog",
-                                       message="Yêu cầu này không nằm trong phạm vi KPI được hỗ trợ.")
+                                       message=("Catalog không có nguồn dữ liệu lượt xem tin/website để tính KPI này."
+                                                if "luot khach xem" in text or "luot xem" in text
+                                                else "Yêu cầu này không nằm trong phạm vi KPI được hỗ trợ."))
         elif "doanh thu" in text or "hieu qua" in text:
             decision = PlannerDecision(outcome="clarification", reason_code="ambiguous_kpi",
                                        message="Bạn muốn đo giá trị giao dịch hay một chỉ tiêu nào khác?")
