@@ -3,14 +3,17 @@
 import Link from "next/link";
 import {useParams, useRouter} from "next/navigation";
 import {useCallback, useEffect, useRef, useState} from "react";
-import {ApiError, currentUser, DashboardDetail, DashboardQueryRequest, DashboardQueryResponse, getDashboard, queryDashboard} from "../../../lib/api";
+import {ApiError, type AuthUser, currentUser, DashboardDetail, DashboardQueryRequest, DashboardQueryResponse, getDashboard, queryDashboard} from "../../../lib/api";
 import {DashboardGrid} from "../../../components/dashboard/DashboardGrid";
 import {Filters} from "../../../components/dashboard/Filters";
+import {WorkspaceShell} from "../../../components/ui/WorkspaceShell";
+import {Icon} from "../../../components/ui/Icon";
 
 export default function DashboardPage() {
   const {id} = useParams<{id: string}>();
   const router = useRouter();
   const [dashboard, setDashboard] = useState<DashboardDetail | null>(null);
+  const [user, setUser] = useState<AuthUser | null>(null);
   const [data, setData] = useState<DashboardQueryResponse | null>(null);
   const [busy, setBusy] = useState(true);
   const [error, setError] = useState("");
@@ -51,7 +54,10 @@ export default function DashboardPage() {
     const initial = new AbortController();
     async function open() {
       try {
-        if (!await currentUser()) {router.replace("/login"); return;}
+        const identity = await currentUser();
+        if (!active) return;
+        if (!identity) {router.replace("/login"); return;}
+        setUser(identity);
         const detail = await getDashboard(id, initial.signal);
         if (!active) return;
         dashboardSnapshot.current = detail;
@@ -64,21 +70,21 @@ export default function DashboardPage() {
     void open();
     return () => {active = false; initial.abort(); controller.current?.abort();};
   }, [id, router, load]);
-  return <main className="dashboardPage"><div className="dashboardShell">
+  return <WorkspaceShell user={user}><div className="dashboardShell">
     <Link href="/dashboards" className="backLink">← Dashboard đã duyệt</Link>
     <header className="dashboardHeader"><div><p className="eyebrow">PHÂN TÍCH BẤT ĐỘNG SẢN</p><h1>{dashboard?.title ?? "Dashboard"}</h1></div>
-      {dashboard ? <span className="versionBadge">Phiên bản {dashboard.version_number} · Đã duyệt</span> : null}</header>
+      {dashboard ? <span className="versionBadge"><Icon name="check" size={15} /> Phiên bản {dashboard.version_number} · Đã duyệt</span> : null}</header>
     {dashboard ? <>
       {dashboard.can_edit ? <p><Link className="builderLink" href={`/builder?dashboard=${encodeURIComponent(id)}`}>Chỉnh sửa bằng hội thoại →</Link></p> : null}
       <Filters busy={busy} onApply={request => void load(request)} />
       <div className="dashboardContext"><p>Phạm vi: {data?.scope ?? "theo tài khoản"} · {filters.date_range?.start
         ? `Bộ lọc ngày từ ${filters.date_range.start} đến trước ${filters.date_range.end_exclusive}` : "Toàn bộ khoảng dữ liệu được lưu"}</p>
-        <button disabled={busy} onClick={() => void load(filters)}>Tải lại dữ liệu</button></div>
+        <button disabled={busy} onClick={() => void load(filters)}><Icon name="refresh" size={16} />Tải lại dữ liệu</button></div>
       {error ? <p className="authError" role="alert">{error}</p> : <DashboardGrid dashboard={dashboard} data={data} loading={busy} />}
       <p className="dashboardHint">Kỳ và bộ lọc bổ sung được giao với định nghĩa đã duyệt. Đơn vị tiền của dataset.</p>
       {dashboard.sql ? <details className="sqlPanel"><summary>Nguồn KPI và SQL</summary>{dashboard.spec.queries.map(query => <section key={query.id}>
         <h2>{query.id}</h2><p>KPI: {query.plan.kpis.join(", ")} · Kỳ: {query.plan.date_range?.start ?? "toàn bộ dữ liệu"}{query.plan.date_range?.end_exclusive ? ` → trước ${query.plan.date_range.end_exclusive}` : ""}</p><pre>{dashboard.sql?.[query.id]}</pre>
       </section>)}</details> : null}
     </> : error ? <p className="authError" role="alert">{error}</p> : <p role="status">Đang mở dashboard…</p>}
-  </div></main>;
+  </div></WorkspaceShell>;
 }

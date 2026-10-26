@@ -5,7 +5,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "AI Dashboard Agent",
-  description: "Local real-estate dashboard builder",
+  description: "Khám phá dữ liệu bất động sản và xây dựng dashboard bằng hội thoại.",
 };
 
 export default function RootLayout({children}: Readonly<{children: ReactNode}>) {

@@ -3,10 +3,12 @@
 import Link from "next/link";
 import {useRouter, useSearchParams} from "next/navigation";
 import {Suspense, useEffect, useRef, useState} from "react";
-import {AgentResponse, ApiError, ApprovalRequest, ConversationView, createConversation, currentUser, decideDraft, getConversation, sendMessage} from "../../lib/api";
+import {AgentResponse, ApiError, ApprovalRequest, type AuthUser, ConversationView, createConversation, currentUser, decideDraft, getConversation, sendMessage} from "../../lib/api";
 import {ChatPanel} from "../../components/builder/ChatPanel";
 import {PreviewPanel} from "../../components/builder/PreviewPanel";
 import {ApprovalPanel} from "../../components/builder/ApprovalPanel";
+import {WorkspaceShell} from "../../components/ui/WorkspaceShell";
+import {Icon} from "../../components/ui/Icon";
 
 function Builder() {
   const router = useRouter();
@@ -14,6 +16,7 @@ function Builder() {
   const conversationId = params.get("conversation");
   const dashboardId = params.get("dashboard");
   const [conversation, setConversation] = useState<ConversationView | null>(null);
+  const [identity, setIdentity] = useState<AuthUser | null>(null);
   const [response, setResponse] = useState<AgentResponse | null>(null);
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -29,6 +32,7 @@ function Builder() {
         if (!active) return;
         if (!user) {router.replace("/login"); return;}
         if (user.role !== "builder") {router.replace("/dashboards"); return;}
+        setIdentity(user);
         const current = conversationId ? await getConversation(conversationId, controller.signal)
           : await createConversation(dashboardId ?? undefined, controller.signal);
         if (!active) return;
@@ -105,9 +109,9 @@ function Builder() {
     } finally {setBusy(false);}
   }
 
-  return <main className="dashboardPage"><div className="builderShell">
+  return <WorkspaceShell user={identity}><div className="builderShell">
     <Link href="/dashboards" className="backLink">← Dashboard đã duyệt</Link>
-    <header className="dashboardHeader"><div><p className="eyebrow">KHÔNG GIAN PHÂN TÍCH</p><h1>Tạo dashboard bằng hội thoại</h1></div></header>
+    <header className="dashboardHeader"><div><p className="eyebrow">Ý TƯỞNG CỦA BẠN, DASHBOARD CỦA BẠN</p><h1>Tạo dashboard bằng hội thoại</h1></div><span className="versionBadge"><Icon name="sparkles" size={16} /> AI Builder</span></header>
     {(response?.mode ?? conversation?.mode) === "mock" ? <p className="modeNotice">Chế độ thử nghiệm: yêu cầu được xử lý bằng mock; dữ liệu xem trước lấy từ database theo quyền của bạn.</p> : null}
     {error ? <p className="authError" role="alert">{error}</p> : null}
     {error && conversation?.dashboard_id ? <p><Link className="backLink" href={`/dashboards/${encodeURIComponent(conversation.dashboard_id)}`}>Mở dashboard đã duyệt hiện tại →</Link></p> : null}
@@ -118,7 +122,7 @@ function Builder() {
         <PreviewPanel conversation={conversation} response={response} busy={busy} />
       </div>
     </div>}
-  </div></main>;
+  </div></WorkspaceShell>;
 }
 
 export default function BuilderPage() {

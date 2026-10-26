@@ -2,6 +2,7 @@
 
 import {FormEvent, useEffect, useRef, useState} from "react";
 import type {ConversationView} from "../../lib/api";
+import {Icon} from "../ui/Icon";
 
 export function ChatPanel({messages, busy, ready, onSend}: {
   messages: ConversationView["messages"]; busy: boolean; ready: boolean; onSend: (message: string) => Promise<boolean>;
@@ -18,7 +19,7 @@ export function ChatPanel({messages, busy, ready, onSend}: {
     if (await onSend(message.trim())) setMessage("");
   }
   return <section className="chatPanel" aria-label="Hội thoại tạo dashboard">
-    <h2>Yêu cầu phân tích</h2>
+    <div className="chatHeading"><span className="chatHeadingIcon"><Icon name="sparkles" size={19} /></span><div><h2>Yêu cầu phân tích</h2><p>Bắt đầu từ một câu hỏi của bạn</p></div></div>
     <div ref={messagesElement} className="chatMessages" aria-live="polite" aria-relevant="additions text">
       {messages.length === 0 ? <p className="dashboardHint">Thử: “Tạo tổng quan giao dịch năm 2025 theo tháng, bang và loại bất động sản.”</p> : null}
       {messages.map((item, index) => <article className={`chatMessage ${item.role}`} key={`${item.created_at}-${index}`}>

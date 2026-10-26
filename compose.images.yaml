@@ -3,7 +3,7 @@ services:
   backend:
     image: ai-dashboard-mvp/backend:${DEPLOY_TAG:-20261024}
   frontend:
-    image: ai-dashboard-mvp/frontend:${FRONTEND_DEPLOY_TAG:-20261024-yellow1}
+    image: ai-dashboard-mvp/frontend:${FRONTEND_DEPLOY_TAG:-20261025-workspace1}
   migrate:
     image: ai-dashboard-mvp/backend:${DEPLOY_TAG:-20261024}
   provision:
