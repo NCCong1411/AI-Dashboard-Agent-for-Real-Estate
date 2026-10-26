@@ -1,6 +1,6 @@
 # MVP deployment status
 
-Verified on 24 October 2026 (Asia/Saigon).
+Verified on 26 October 2026 (Asia/Saigon).
 
 - URL: https://aidashboardncc.duckdns.org
 - Provider: AWS Lightsail, `us-east-1a`, instance `ai-dashboard-mvp`.
@@ -8,12 +8,33 @@ Verified on 24 October 2026 (Asia/Saigon).
 - OS: Ubuntu 24.04; Docker Compose; 2 GB swap.
 - Current public IPv4: `44.222.76.41`. Recheck after stop/start and update DuckDNS.
 - Release images: `ai-dashboard-mvp/backend:20261024` and
-  `ai-dashboard-mvp/frontend:20261024-yellow1`, built locally and transferred over SSH.
+  `ai-dashboard-mvp/frontend:20261025-workspace1`, built locally and transferred over SSH.
 - Compose files: `compose.prod.yaml` plus `compose.images.yaml`.
 - Server release directory: `/opt/ai-dashboard`.
 - Application: production mode, mock LLM, fresh synthetic database and accounts.
 
 ## Verification
+
+The redesigned warm-yellow workspace was deployed on 26 October 2026 from
+source commit `e53907f`. It adds shared navigation, a split login layout,
+dashboard library summaries, responsive report cards, and a refreshed Builder
+workspace without changing the backend architecture. Local checks passed:
+18 Playwright tests, 149 integration tests, 3 restore checks, lint, typecheck,
+and the production build. The Docker build also passed and its production
+dependency audit reported no vulnerabilities.
+
+Only the frontend container was recreated. Its image archive SHA-256 was
+verified before loading; the backend start timestamp remained unchanged.
+The runtime and ALL/CA/TX reader-role verifier passed after rollout.
+Production browser smoke checks passed: HTTPS, the new login/workspace,
+secure session cookie, public Viewer login, real ALL-scope dashboard results,
+three chart canvases, mobile overflow checks, Builder API denial, and logout.
+No browser page errors were observed. Production checks did not create or
+modify dashboards or conversations.
+The pre-update PostgreSQL dump was inspected and downloaded privately to
+`deploy/secrets/before-workspace-20261025.dump`; its checksum matched the server.
+The previous Compose image selection is retained on the server at
+`deploy/secrets/compose.images.before-workspace-20261025.yaml` for rollback.
 
 The pale-yellow frontend was deployed on 24 October 2026: background
 `#FFF9E6`, primary buttons `#F4D675`, text `#302A1E`. Frontend lint and production
