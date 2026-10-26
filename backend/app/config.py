@@ -60,6 +60,7 @@ class Settings(BaseSettings):
     agent_run_timeout_seconds: int = Field(default=120, ge=90, le=180)
     llm_budget_per_run_usd: Decimal = Field(default=Decimal("0.10"), ge=0, max_digits=12, decimal_places=6, allow_inf_nan=False)
     llm_budget_per_day_usd: Decimal = Field(default=Decimal("1.00"), ge=0, max_digits=12, decimal_places=6, allow_inf_nan=False)
+    llm_global_budget_per_day_usd: Decimal | None = Field(default=None, ge=0, max_digits=12, decimal_places=6, allow_inf_nan=False)
 
     @field_validator(
         "audit_database_url",

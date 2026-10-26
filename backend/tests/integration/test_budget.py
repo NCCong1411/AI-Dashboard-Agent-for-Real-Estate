@@ -160,3 +160,34 @@ def test_unknown_principal_and_cross_owner_reservation_are_rejected(context):
     permit = service.reserve(user, run, 0, 0)
     with pytest.raises(UsageLimitError, match="reservation_not_found"):
         service.reconcile(uuid.uuid4(), permit, AdapterCall(None, 0, 0))
+
+
+def test_global_budget_serializes_different_builders_and_survives_new_service(context):
+    service, user = context
+    service.clock = lambda: datetime(1999, 1, 1, tzinfo=UTC)
+    service.settings.llm_global_budget_per_day_usd = Decimal("0.0002")
+    with Session(service.engine) as database, database.begin():
+        other = User(username="budget_global_" + uuid.uuid4().hex, password_hash="not-login", role="builder", scope_profile="ALL")
+        database.add(other)
+        database.flush()
+        other_id = other.id
+    try:
+        def attempt(index):
+            try:
+                return service.reserve(user if index % 2 else other_id, uuid.uuid4(), 100, 0)
+            except UsageLimitError as error:
+                return error.code
+        with ThreadPoolExecutor(max_workers=8) as pool:
+            outcomes = list(pool.map(attempt, range(8)))
+        assert sum(not isinstance(item, str) for item in outcomes) == 2
+        assert outcomes.count("global_daily_budget") == 6
+        restarted = UsageService(service.engine, service.settings, clock=service.clock)
+        with pytest.raises(UsageLimitError, match="global_daily_budget"):
+            restarted.reserve(user, uuid.uuid4(), 100, 0)
+        restarted.clock = lambda: datetime(1999, 1, 2, tzinfo=UTC)
+        restarted.reserve(user, uuid.uuid4(), 100, 0)
+    finally:
+        with Session(service.engine) as database, database.begin():
+            database.execute(delete(AuditEvent).where(AuditEvent.actor_user_id == other_id))
+            database.execute(delete(UsageRecord).where(UsageRecord.user_id == other_id))
+            database.execute(delete(User).where(User.id == other_id))

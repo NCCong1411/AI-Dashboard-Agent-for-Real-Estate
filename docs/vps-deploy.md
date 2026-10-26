@@ -1,15 +1,17 @@
 # MVP deployment: one Ubuntu VPS
 
 This is a **new demo database**, not a copy of the developer's local users,
-conversations, dashboards, or secrets. The first release is public Viewer access
-and `LLM_MODE=mock`; only an operator knows the Builder passwords. No OpenAI key
-is needed on the VPS. The only public containers are Caddy's ports 80/443.
+conversations, dashboards, or secrets. The first release used mock/Viewer-only
+access; the current release also has a public Builder with live OpenAI and a
+DB-backed $0.10/day global reservation cap. Personal Builders stay private.
+The API key is held only in owner-readable VPS config, never Git/images.
+The only public containers are Caddy's ports 80/443.
 
 ## 1. External prerequisites
 
 **Selected deployment: AWS Lightsail**, `us-east-1`, Ubuntu 24.04,
 `micro_3_0` (1 GB RAM, 40 GB SSD, IPv4), $7/month base price before taxes,
-snapshots, or traffic overage. This is a low-traffic mock demo. Credits cover
+snapshots, or traffic overage. This is a low-traffic demo. Credits cover
 eligible usage only while the associated credit remains valid and available;
 they do not make the resource permanently free. Stopping a Lightsail instance
 does not stop its bundle charges. Do not enable paid add-ons without reviewing
@@ -21,7 +23,7 @@ of swap. Build application images locally, transfer them over SSH, and load
 them with `docker load`; do not compile Next.js on the 1 GB host. Use both
 `-f compose.prod.yaml -f compose.images.yaml` for **every** Compose command on
 this host. Set `DEPLOY_TAG` to the transferred backend release tag (default
-`20261024`) and `FRONTEND_DEPLOY_TAG` to the frontend tag (default
+`20261026-live2`) and `FRONTEND_DEPLOY_TAG` to the frontend tag (default
 `20261025-workspace1`). These tags are independent so a UI update does not
 replace the backend container.
 Start services using `up -d --no-build`, rather than the `--build` commands
@@ -183,6 +185,28 @@ appropriate for the recovered cluster.
 
 ## Boundaries
 
+### Current live public demo
+
+`LLM_GLOBAL_BUDGET_PER_DAY_USD=0.10` is shared across all Builders, with pending
+usage included. Production live mode refuses to call without an explicit cap.
+Set it to zero to block new paid reservations, or use `LLM_MODE=mock` for no
+API calls. Keep verified conservative prices; the cap is not provider-wide and
+does not cover taxes, hosting or other applications using the key.
+
+`deploy/scripts/prepare_live_release.py` produces ignored private transfer
+artifacts. Upload by verified SSH into mode-700 `deploy/secrets/`, then run
+`deploy/scripts/apply_live_release.py` on the VPS. It merges only whitelisted
+LLM fields into mode-600 config, preserving DB/auth settings. It never deploys
+containers itself. The prepare step refuses an existing artifact to avoid
+silently overwriting a previous release; review before rotating again.
+`scripts/create_public_demo_builder.py` creates only `builder_demo` and refuses
+conflicting existing credentials; it never rotates private users.
+
+Rollback: restore the private env and Compose selection listed in deployment
+status, then `docker compose -f compose.prod.yaml -f compose.images.yaml up -d
+--no-deps --no-build --wait backend`. Keep the DB volume; this release needs
+no data restore or schema migration. Repeat health/login/query smoke checks.
+
 ### Rotate the public Viewer login from Windows
 
 Save the desired `DEMO_USERNAME` and `DEMO_PASSWORD` (12-1024 characters) in
@@ -225,5 +249,6 @@ check login before retrying because the DB commit may already have completed.
   inspection; it is not a persistent runtime setting.
 - Demo accounts are newly generated. Existing local credentials that were ever
   pasted into chat or screenshots must not be reused; rotate them separately.
-- Enabling a real LLM later is a separate change requiring a fresh key, current
-  model pricing, strict budgets, abuse protection, and paid acceptance testing.
+- Live LLM is now enabled under the reviewed capped profile above. Further
+  model/key/tier changes still require current pricing, strict budgets, abuse
+  checks and paid acceptance testing; never remove the global cap for a demo.

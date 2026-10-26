@@ -11,7 +11,16 @@ Demo đã triển khai trên AWS Lightsail với Docker Compose, PostgreSQL và 
 | Username | `viewer` |
 | Password | `hehehehehehe` |
 
-Đăng nhập để xem dashboard bất động sản, biểu đồ và thử các bộ lọc. Đây là tài khoản dùng chung, chỉ có quyền xem dữ liệu mẫu. Tài khoản Builder được giữ riêng. Bản demo đang dùng `LLM_MODE=mock`, không thể hiện chất lượng của model AI thật.
+Viewer chỉ xem dữ liệu mẫu và thử bộ lọc. Để trải nghiệm **AI tạo/chỉnh dashboard bằng tiếng Việt**, dùng Builder demo riêng:
+
+| Tài khoản Builder demo công khai | Giá trị |
+| --- | --- |
+| Username | `builder_demo` |
+| Password | `BuilderDemo2026!AI` |
+
+Web hiện dùng **`LLM_MODE=live`, `gpt-6-luna` qua OpenAI Responses API**. Vào **AI Builder**, nhập “Tạo dashboard tổng giá trị giao dịch theo bang năm 2025”, rồi thử “Thêm số lượng đề nghị mua bất động sản”. Bản nháp chỉ xuất hiện cho Viewer sau khi bấm **Duyệt và phát hành**.
+
+Đây là tài khoản dùng chung: hội thoại/dashboard không riêng tư, không nhập dữ liệu nhạy cảm. Builder demo chỉ sửa dashboard do tài khoản này sở hữu; Builder cá nhân vẫn được giữ riêng. Giới hạn: 1 lượt đang chạy, 6 yêu cầu/phút, 30 hội thoại/ngày và 1 LLM call/lượt. Ngân sách dự trù LLM **dùng chung toàn ứng dụng $0,10/ngày** (giờ Việt Nam); hết hạn mức thì tạm dừng gọi AI, dashboard đã duyệt vẫn xem được. API key không nằm trong trình duyệt hoặc repository.
 
 Ứng dụng local gồm Next.js App Router ở cổng 3000 và FastAPI ở cổng 8000. Đã có auth, bảy KPI sales/offers/repairs, compiler SQL allowlist, executor read-only theo scope, dashboard với bộ lọc/ECharts và Builder tạo/chỉnh draft qua hội thoại. Có durable checkpoint, khôi phục sau restart, API/UI duyệt hoặc từ chối và phát hành phiên bản idempotent. Đã kiểm chứng DB chính, bộ test PostgreSQL/browser, benchmark LLM thật và gate chất lượng theo review ngữ nghĩa được duyệt; xem trạng thái bàn giao mới nhất trong [kế hoạch](IMPLEMENTATION_PLAN.md) và [báo cáo nghiệm thu](docs/acceptance-report.md). Health không cần database.
 
@@ -171,7 +180,7 @@ Executor mặc định `statement_timeout=5000ms`, tối đa 1.000 dòng và pla
 
 ## Adapter, ngân sách và hội thoại
 
-Hướng dẫn bật `gpt-6-luna` local và chạy chuỗi kiểm thử catalog/chỉnh sửa bằng API thật: [Live MVP](docs/live-mvp.md). Không bật live trên demo công khai trong quy trình này.
+Hướng dẫn bật `gpt-6-luna` local và kiểm thử API thật: [Live MVP](docs/live-mvp.md). Web công khai dùng profile ngân sách/throttle riêng: [trạng thái deployment](docs/deployment-status.md).
 
 `LLM_MODE=mock` không cần key và dùng tập quy tắc deterministic phục vụ phát triển. `LLM_MODE=live` yêu cầu toàn bộ cấu hình provider/HTTPS endpoint/model/key/pricing trong `.env.example`; chưa có model hoặc giá mặc định. Không coi mock là bằng chứng chất lượng LLM thật.
 

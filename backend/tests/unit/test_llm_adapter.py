@@ -2,6 +2,7 @@
 
 import asyncio
 from datetime import UTC, datetime
+from decimal import Decimal
 import json
 from uuid import uuid4
 
@@ -136,6 +137,15 @@ def test_live_requires_complete_configuration_without_exposing_secrets(field):
     with pytest.raises(AdapterConfigurationError) as error:
         create_planner(config)
     assert "unit-test-key" not in str(error.value)
+
+
+def test_production_live_requires_explicit_shared_spending_cap():
+    config = settings()
+    config.app_env = "production"
+    with pytest.raises(AdapterConfigurationError, match="global daily budget"):
+        create_planner(config)
+    config.llm_global_budget_per_day_usd = Decimal("0.10")
+    assert isinstance(create_planner(config), OpenAIPlanner)
 
 
 def test_mock_has_no_key_or_network_and_outcomes_are_deterministic(monkeypatch):

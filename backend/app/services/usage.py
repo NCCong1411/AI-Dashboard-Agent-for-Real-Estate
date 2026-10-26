@@ -11,7 +11,7 @@ from typing import Callable
 from uuid import UUID
 from zoneinfo import ZoneInfo
 
-from sqlalchemy import Engine, func, select
+from sqlalchemy import Engine, func, select, text
 from sqlalchemy.orm import Session
 
 from app.agent.llm import AdapterCall, Planner, require_live_configuration, strict_output_schema
@@ -74,6 +74,10 @@ class UsageService:
             input_bound = output_bound = 0
         amount = estimate_cost(input_bound, output_bound, input_price, output_price)
         with Session(self.engine) as database, database.begin():
+            if config.llm_mode == "live" and config.llm_global_budget_per_day_usd is not None:
+                # One application-wide reservation lock, before any user lock.
+                # Pending/unknown usage counts too; restart cannot reset the cap.
+                database.execute(text("SELECT pg_advisory_xact_lock(73920146)"))
             # All reservations/reconciliations for a Builder acquire this same
             # lock first. Different conversations cannot race the daily budget.
             user = database.scalar(select(User).where(User.id == user_id).with_for_update())
@@ -103,6 +107,11 @@ class UsageService:
                                     .where(UsageRecord.user_id == user_id, UsageCall.usage_date == day))
             if daily + amount > config.llm_budget_per_day_usd:
                 raise UsageLimitError("daily_budget")
+            if config.llm_mode == "live" and config.llm_global_budget_per_day_usd is not None:
+                total = database.scalar(select(func.coalesce(func.sum(UsageCall.charged_cost_usd), 0))
+                                        .where(UsageCall.usage_date == day, UsageCall.mode == "live"))
+                if total + amount > config.llm_global_budget_per_day_usd:
+                    raise UsageLimitError("global_daily_budget")
             run.llm_calls += 1
             run.input_tokens += input_bound
             run.output_tokens += output_bound

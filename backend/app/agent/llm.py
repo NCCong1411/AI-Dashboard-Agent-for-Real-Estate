@@ -81,6 +81,8 @@ def strict_output_schema(*, editing: bool = False) -> dict:
 
 
 def require_live_configuration(settings: Settings) -> None:
+    if settings.app_env == "production" and settings.llm_global_budget_per_day_usd is None:
+        raise AdapterConfigurationError("production live mode requires an explicit global daily budget")
     required = (settings.llm_provider, settings.llm_endpoint, settings.llm_model,
                 settings.llm_api_key, settings.llm_pricing_source, settings.llm_pricing_verified_on)
     if (not all(required) or settings.llm_input_price_per_million is None

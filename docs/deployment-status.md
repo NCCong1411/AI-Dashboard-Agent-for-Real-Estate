@@ -1,19 +1,54 @@
 # MVP deployment status
 
-Verified on 26 October 2026 (Asia/Saigon).
+Verified on 27 October 2026 (Asia/Saigon).
 
 - URL: https://aidashboardncc.duckdns.org
 - Provider: AWS Lightsail, `us-east-1a`, instance `ai-dashboard-mvp`.
 - Bundle: `micro_3_0`, $7/month base price, 1 GB RAM, 40 GB SSD, IPv4.
 - OS: Ubuntu 24.04; Docker Compose; 2 GB swap.
 - Current public IPv4: `44.222.76.41`. Recheck after stop/start and update DuckDNS.
-- Release images: `ai-dashboard-mvp/backend:20261024` and
+- Release images: `ai-dashboard-mvp/backend:20261026-live2` and
   `ai-dashboard-mvp/frontend:20261025-workspace1`, built locally and transferred over SSH.
 - Compose files: `compose.prod.yaml` plus `compose.images.yaml`.
 - Server release directory: `/opt/ai-dashboard`.
-- Application: production mode, mock LLM, fresh synthetic database and accounts.
+- Application: production mode, live `gpt-6-luna`, synthetic data; dedicated public Builder and Viewer.
 
 ## Verification
+
+### Live public Builder — 27 October 2026
+
+Only the backend container was recreated. The image archive was SHA-256
+verified; source data, PostgreSQL volume and schema were preserved (still
+`0005_graph_checkpoints`). Backup `deploy/secrets/before-live-20261027.dump`
+was verified and downloaded privately with a matching checksum. VPS rollback
+files are `deploy/secrets/backend.before-live-20261026.env` and
+`deploy/secrets/compose.images.before-live-20261027.yaml`.
+
+The separate `builder_demo` account is public; private users/passwords were
+not modified. The API key is only in mode-600 VPS config, outside Git/images.
+Production live mode requires an explicit global daily budget. Reservations
+use a PostgreSQL advisory lock across all Builders and include pending/unknown
+usage, so parallel users or restart cannot reset the $0.10/day shared cap.
+Limits: $0.02/run, $0.10/day per Builder, one LLM call/run. The day resets at
+midnight Asia/Ho_Chi_Minh. The conservative token rates are $0.125/M input and
+$0.50/M output. These are application estimates, not an invoice or a cap on
+other uses of the same API key; AWS hosting charges are separate.
+
+Production Builder quotas persist in DB: one active run per Builder, six
+messages/minute, 30 new conversations/day and six creations/minute. This is
+a bounded shared demo, not private multi-user storage or DDoS protection.
+
+PASS: 272 unit tests, 152 isolated PostgreSQL integration tests, 3 restore
+checks, 19 mock browser tests; 16-table source fingerprint unchanged.
+Production ALL/CA/TX reader checks passed. Browser smoke passed HTTPS, public
+Builder login, actual live Vietnamese dashboard creation, real query results,
+desktop/mobile rendering, private dashboard edit denial and logout. The smoke
+left an unapproved draft, not a published dashboard. Durable accounting showed
+one settled `gpt-6-luna` call: 2,848 input tokens, 681 output tokens, two queries
+and estimated $0.000697. Public Viewer login, data, Builder denial and logout
+also passed. The deployment did not change the hosting bundle or add services.
+
+### Earlier UI-only releases
 
 The redesigned warm-yellow workspace was deployed on 26 October 2026 from
 source commit `e53907f`. It adds shared navigation, a split login layout,

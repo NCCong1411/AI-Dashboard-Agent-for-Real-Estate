@@ -3,7 +3,8 @@
 from __future__ import annotations
 
 import asyncio
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
+from zoneinfo import ZoneInfo
 from functools import lru_cache
 import hashlib
 import json
@@ -11,7 +12,7 @@ from time import perf_counter
 from uuid import UUID, uuid4
 
 from fastapi import HTTPException
-from sqlalchemy import Engine, select
+from sqlalchemy import Engine, select, func
 from sqlalchemy.orm import Session
 
 from app.agent.graph import build_graph
@@ -136,6 +137,15 @@ class ConversationService:
     def create(self, user_id: UUID, dashboard_id: UUID | None = None) -> ConversationView:
         with Session(self.engine) as database, database.begin():
             user = self._builder(database, user_id)
+            if self.settings.app_env == "production":
+                now = datetime.now(UTC)
+                today = now.astimezone(ZoneInfo("Asia/Ho_Chi_Minh")).replace(hour=0, minute=0, second=0, microsecond=0)
+                count = database.scalar(select(func.count()).select_from(Conversation).where(
+                    Conversation.owner_user_id == user_id, Conversation.created_at >= today))
+                recent = database.scalar(select(func.count()).select_from(Conversation).where(
+                    Conversation.owner_user_id == user_id, Conversation.created_at >= now - timedelta(minutes=1)))
+                if count >= 30 or recent >= 6:
+                    raise HTTPException(429, "Demo đã đạt giới hạn tạo hội thoại; vui lòng thử lại sau.")
             current_spec, base_version = None, None
             if dashboard_id is not None:
                 owned = database.scalar(select(Dashboard).where(Dashboard.id == dashboard_id, Dashboard.owner_user_id == user_id))
@@ -189,6 +199,16 @@ class ConversationService:
                 raise HTTPException(409, "Conversation already has an active run")
             if request.expected_revision is not None and request.expected_revision != record.draft_revision:
                 raise HTTPException(409, "Draft revision is stale")
+            if self.settings.app_env == "production":
+                active = database.scalar(select(func.count()).select_from(Conversation).where(
+                    Conversation.owner_user_id == user_id, Conversation.status == "running",
+                    Conversation.active_process_epoch == PROCESS_EPOCH,
+                    Conversation.active_run_started_at >= datetime.now(UTC) - timedelta(seconds=self.settings.agent_run_timeout_seconds + 30)))
+                recent = database.scalar(select(func.count()).select_from(ConversationMessage).join(Conversation).where(
+                    Conversation.owner_user_id == user_id, ConversationMessage.role == "user",
+                    ConversationMessage.created_at >= datetime.now(UTC) - timedelta(minutes=1)))
+                if active or recent >= 6:
+                    raise HTTPException(429, "Builder demo đang bận hoặc đã đạt 6 yêu cầu/phút; vui lòng thử lại sau.")
             approval = self._approval(database, record)
             if approval is not None:
                 if not approval.checkpoint_synced:
