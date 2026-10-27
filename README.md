@@ -121,6 +121,16 @@ Kiểm tra lỗi config rõ ràng:
 - Thiếu `APP_ENV` và không có `backend/.env`: backend dừng với validation error chỉ rõ field `app_env` bị thiếu.
 - Thiếu `BACKEND_URL` và không có `frontend/.env.local`: Next.js dừng với thông báo hướng dẫn copy `.env.example`.
 
+## Nguồn dữ liệu
+
+Dự án sử dụng bộ [Real estate sales sample database](https://databasesample.com/datasets/real-estate-sales-sample-database) từ **Database Sample**, bản SQL PostgreSQL v3: [tải bản gốc](https://database-sample-website.s3.eu-north-1.amazonaws.com/datasets/real-estate-sales-sample-database/v3/sql/postgres.sql). Bản được lưu trong repo tại [file SQL dữ liệu mẫu](data/real-estate-sales-sample-database-v3-sql-postgres.sql).
+
+- Đây là **dữ liệu giả lập (synthetic)** được sinh bằng Faker, không phải dữ liệu khách hàng hay giao dịch bất động sản thực tế.
+- Quy mô bản mẫu: **16 bảng, 2.203 dòng**, gồm **1.000 giao dịch**.
+- Giấy phép dữ liệu: [CC0 1.0 Universal](https://creativecommons.org/publicdomain/zero/1.0/), theo khai báo trong header file SQL và trang nguồn. Giấy phép này áp dụng cho bộ dữ liệu, không mặc định áp dụng cho mã nguồn ứng dụng.
+
+Bộ dữ liệu được sử dụng làm đầu vào cho demo và kiểm thử. Phần ứng dụng của dự án gồm tích hợp PostgreSQL, lớp analytics/KPI, phân quyền truy cập, AI Agent và giao diện dashboard; dự án không nhận là tác giả của bộ dữ liệu gốc. Trang nguồn có thể cập nhật phiên bản mới; repo giữ bản SQL nêu trên để tái lập kết quả.
+
 ## Dữ liệu và bằng chứng
 
 - Import nguồn: `data/real-estate-sales-sample-database-v3-sql-postgres.sql` — không tự động import hoặc sửa.
