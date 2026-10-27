@@ -28,9 +28,11 @@ export function formatCell(value: unknown, type?: string, unit?: string | null):
   return String(value);
 }
 
+export const DEMO_CURRENCY_NOTICE = "Đơn vị tiền tệ trong demo được giả định là USD. File dữ liệu nguồn không khai báo mã tiền tệ; đây không phải phép quy đổi tiền tệ.";
+
 export function unitLabel(unit?: string | null): string {
-  if (unit === "dataset_currency") return "đơn vị tiền của dataset";
-  if (unit === "dataset_currency_per_transaction") return "đơn vị tiền của dataset / giao dịch";
+  if (unit === "dataset_currency") return "USD (giả định trong demo)";
+  if (unit === "dataset_currency_per_transaction") return "USD / giao dịch (giả định trong demo)";
   if (unit === "transaction") return "giao dịch";
   if (unit === "property") return "bất động sản";
   if (unit === "offer") return "đề nghị";

@@ -8,12 +8,32 @@ Verified on 27 October 2026 (Asia/Saigon).
 - OS: Ubuntu 24.04; Docker Compose; 2 GB swap.
 - Current public IPv4: `44.222.76.41`. Recheck after stop/start and update DuckDNS.
 - Release images: `ai-dashboard-mvp/backend:20261026-live2` and
-  `ai-dashboard-mvp/frontend:20261025-workspace1`, built locally and transferred over SSH.
+  `ai-dashboard-mvp/frontend:20261027-usd1`, built locally and transferred over SSH.
 - Compose files: `compose.prod.yaml` plus `compose.images.yaml`.
 - Server release directory: `/opt/ai-dashboard`.
 - Application: production mode, live `gpt-6-luna`, synthetic data; dedicated public Builder and Viewer.
 
 ## Verification
+
+### Demo currency convention — 27 October 2026
+
+The frontend labels monetary KPIs as USD with an explicit demo assumption,
+and both published dashboards and Builder previews disclose that the source
+SQL does not declare a currency. No conversion is performed; stored values,
+API unit identifiers and backend KPI semantics are unchanged. README documents
+the same convention and the synthetic US context.
+
+Lint, typecheck, production build, Docker build and the focused currency-label
+regression test passed. The image archive SHA-256 matched before loading.
+Only the frontend was recreated; the backend start timestamp was unchanged.
+All four services are healthy. The pre-update PostgreSQL archive was inspected
+with `pg_restore --list` and downloaded privately with a matching SHA-256.
+Post-rollout HTTPS checks passed health, public Builder login/logout and a
+real published-dashboard query. The served JavaScript for both dashboard and
+Builder routes contains the new currency labels and full disclaimer. These
+checks did not call the LLM or publish/change dashboards.
+Rollback selection is retained at
+`deploy/secrets/compose.images.before-usd-20261027.yaml` on the VPS.
 
 ### Live public Builder — 27 October 2026
 

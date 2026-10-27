@@ -24,7 +24,7 @@ them with `docker load`; do not compile Next.js on the 1 GB host. Use both
 `-f compose.prod.yaml -f compose.images.yaml` for **every** Compose command on
 this host. Set `DEPLOY_TAG` to the transferred backend release tag (default
 `20261026-live2`) and `FRONTEND_DEPLOY_TAG` to the frontend tag (default
-`20261025-workspace1`). These tags are independent so a UI update does not
+`20261027-usd1`). These tags are independent so a UI update does not
 replace the backend container.
 Start services using `up -d --no-build`, rather than the `--build` commands
 shown below for larger VPSs. For updates, build and test a new release locally,

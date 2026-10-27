@@ -3,6 +3,7 @@
 import type {AgentResponse, ConversationView} from "../../lib/api";
 import {DashboardGrid} from "../dashboard/DashboardGrid";
 import {DraftChanges} from "./DraftChanges";
+import {DEMO_CURRENCY_NOTICE} from "../../lib/format";
 
 export function PreviewPanel({conversation, response, busy}: {conversation: ConversationView | null; response: AgentResponse | null; busy: boolean}) {
   const preview = response?.status === "awaiting_approval" ? response : conversation?.preview ?? response;
@@ -18,6 +19,7 @@ export function PreviewPanel({conversation, response, busy}: {conversation: Conv
     <DraftChanges changes={preview?.changes} />
     {spec ? <>
       <h3>{spec.title}</h3>
+      <p className="dashboardHint">{DEMO_CURRENCY_NOTICE}</p>
       <p className="dashboardHint">Phạm vi: {preview?.scope ?? "theo tài khoản"} · Kỳ: {periods.join("; ")}</p>
       {hasResults || busy ? <DashboardGrid dashboard={{spec}} data={hasResults ? {results: preview.results ?? {}} : null} loading={busy} />
         : <p className="widgetMessage">Gửi yêu cầu để tạo bản xem trước với dữ liệu trong phạm vi hiện tại.</p>}

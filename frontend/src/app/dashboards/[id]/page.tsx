@@ -8,6 +8,7 @@ import {DashboardGrid} from "../../../components/dashboard/DashboardGrid";
 import {Filters} from "../../../components/dashboard/Filters";
 import {WorkspaceShell} from "../../../components/ui/WorkspaceShell";
 import {Icon} from "../../../components/ui/Icon";
+import {DEMO_CURRENCY_NOTICE} from "../../../lib/format";
 
 export default function DashboardPage() {
   const {id} = useParams<{id: string}>();
@@ -81,7 +82,7 @@ export default function DashboardPage() {
         ? `Bộ lọc ngày từ ${filters.date_range.start} đến trước ${filters.date_range.end_exclusive}` : "Toàn bộ khoảng dữ liệu được lưu"}</p>
         <button disabled={busy} onClick={() => void load(filters)}><Icon name="refresh" size={16} />Tải lại dữ liệu</button></div>
       {error ? <p className="authError" role="alert">{error}</p> : <DashboardGrid dashboard={dashboard} data={data} loading={busy} />}
-      <p className="dashboardHint">Kỳ và bộ lọc bổ sung được giao với định nghĩa đã duyệt. Đơn vị tiền của dataset.</p>
+      <p className="dashboardHint">Kỳ và bộ lọc bổ sung được giao với định nghĩa đã duyệt. {DEMO_CURRENCY_NOTICE}</p>
       {dashboard.sql ? <details className="sqlPanel"><summary>Nguồn KPI và SQL</summary>{dashboard.spec.queries.map(query => <section key={query.id}>
         <h2>{query.id}</h2><p>KPI: {query.plan.kpis.join(", ")} · Kỳ: {query.plan.date_range?.start ?? "toàn bộ dữ liệu"}{query.plan.date_range?.end_exclusive ? ` → trước ${query.plan.date_range.end_exclusive}` : ""}</p><pre>{dashboard.sql?.[query.id]}</pre>
       </section>)}</details> : null}

@@ -127,6 +127,7 @@ Dự án sử dụng bộ [Real estate sales sample database](https://databasesa
 
 - Đây là **dữ liệu giả lập (synthetic)** được sinh bằng Faker, không phải dữ liệu khách hàng hay giao dịch bất động sản thực tế.
 - Quy mô bản mẫu: **16 bảng, 2.203 dòng**, gồm **1.000 giao dịch**.
+- **Đơn vị tiền tệ trong demo được giả định là USD.** File SQL nguồn không khai báo mã tiền tệ; đây là quy ước hiển thị của demo, không phải xác nhận từ nguồn hay phép quy đổi tiền tệ. Dữ liệu giả lập theo bối cảnh Mỹ (`en_US`), không phải giao dịch thực thu thập tại Mỹ.
 - Giấy phép dữ liệu: [CC0 1.0 Universal](https://creativecommons.org/publicdomain/zero/1.0/), theo khai báo trong header file SQL và trang nguồn. Giấy phép này áp dụng cho bộ dữ liệu, không mặc định áp dụng cho mã nguồn ứng dụng.
 
 Bộ dữ liệu được sử dụng làm đầu vào cho demo và kiểm thử. Phần ứng dụng của dự án gồm tích hợp PostgreSQL, lớp analytics/KPI, phân quyền truy cập, AI Agent và giao diện dashboard; dự án không nhận là tác giả của bộ dữ liệu gốc. Trang nguồn có thể cập nhật phiên bản mới; repo giữ bản SQL nêu trên để tái lập kết quả.
