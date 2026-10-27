@@ -1,4 +1,5 @@
 # Local configuration and secrets
+/IMPLEMENTATION_PLAN.md
 .env*
 !.env.example
 backend/.env

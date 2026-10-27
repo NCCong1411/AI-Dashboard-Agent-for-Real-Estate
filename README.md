@@ -6,27 +6,22 @@ Demo đã triển khai trên AWS Lightsail với Docker Compose, PostgreSQL và 
 
 **Website:** https://aidashboardncc.duckdns.org
 
-| Tài khoản Viewer công khai | Giá trị |
-| --- | --- |
-| Username | `viewer` |
-| Password | `hehehehehehe` |
-
-Viewer chỉ xem dữ liệu mẫu và thử bộ lọc. Để trải nghiệm **AI tạo/chỉnh dashboard bằng tiếng Việt**, dùng Builder demo riêng:
+Để trải nghiệm **AI tạo/chỉnh dashboard bằng tiếng Việt**, đăng nhập bằng Builder demo:
 
 | Tài khoản Builder demo công khai | Giá trị |
 | --- | --- |
 | Username | `builder_demo` |
 | Password | `BuilderDemo2026!AI` |
 
-Web hiện dùng **`LLM_MODE=live`, `gpt-6-luna` qua OpenAI Responses API**. Vào **AI Builder**, nhập “Tạo dashboard tổng giá trị giao dịch theo bang năm 2025”, rồi thử “Thêm số lượng đề nghị mua bất động sản”. Bản nháp chỉ xuất hiện cho Viewer sau khi bấm **Duyệt và phát hành**.
+Web hiện dùng **`LLM_MODE=live`, `gpt-6-luna` qua OpenAI Responses API**. Vào **AI Builder**, nhập “Tạo dashboard tổng giá trị giao dịch theo bang năm 2025”, rồi thử “Thêm số lượng đề nghị mua bất động sản”. Bản nháp chỉ được chia sẻ sau khi bấm **Duyệt và phát hành**.
 
 Đây là tài khoản dùng chung: hội thoại/dashboard không riêng tư, không nhập dữ liệu nhạy cảm. Builder demo chỉ sửa dashboard do tài khoản này sở hữu; Builder cá nhân vẫn được giữ riêng. Giới hạn: 1 lượt đang chạy, 6 yêu cầu/phút, 30 hội thoại/ngày và 1 LLM call/lượt. Ngân sách dự trù LLM **dùng chung toàn ứng dụng $0,10/ngày** (giờ Việt Nam); hết hạn mức thì tạm dừng gọi AI, dashboard đã duyệt vẫn xem được. API key không nằm trong trình duyệt hoặc repository.
 
-Ứng dụng local gồm Next.js App Router ở cổng 3000 và FastAPI ở cổng 8000. Đã có auth, bảy KPI sales/offers/repairs, compiler SQL allowlist, executor read-only theo scope, dashboard với bộ lọc/ECharts và Builder tạo/chỉnh draft qua hội thoại. Có durable checkpoint, khôi phục sau restart, API/UI duyệt hoặc từ chối và phát hành phiên bản idempotent. Đã kiểm chứng DB chính, bộ test PostgreSQL/browser, benchmark LLM thật và gate chất lượng theo review ngữ nghĩa được duyệt; xem trạng thái bàn giao mới nhất trong [kế hoạch](IMPLEMENTATION_PLAN.md) và [báo cáo nghiệm thu](docs/acceptance-report.md). Health không cần database.
+Ứng dụng local gồm Next.js App Router ở cổng 3000 và FastAPI ở cổng 8000. Đã có auth, bảy KPI sales/offers/repairs, compiler SQL allowlist, executor read-only theo scope, dashboard với bộ lọc/ECharts và Builder tạo/chỉnh draft qua hội thoại. Có durable checkpoint, khôi phục sau restart, API/UI duyệt hoặc từ chối và phát hành phiên bản idempotent. Đã kiểm chứng DB chính, bộ test PostgreSQL/browser, benchmark LLM thật và gate chất lượng theo review ngữ nghĩa được duyệt; xem [trạng thái triển khai](docs/deployment-status.md) và [báo cáo nghiệm thu](docs/acceptance-report.md). Health không cần database.
 
 ![Dashboard bất động sản với ba KPI và biểu đồ theo tháng, bang, loại bất động sản](docs/images/dashboard-preview.png)
 
-*Ảnh từ demo công khai: giao diện vàng nhạt, dữ liệu mẫu tổng hợp và phạm vi ALL. Viewer có thể thử bộ lọc ngày, bang và loại bất động sản.*
+*Ảnh từ demo công khai: giao diện vàng nhạt, dữ liệu mẫu tổng hợp và phạm vi ALL. Có thể thử bộ lọc ngày, bang và loại bất động sản.*
 
 ## Yêu cầu
 
